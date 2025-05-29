@@ -1,26 +1,24 @@
-/data
-/docs
-/fonts
-/movies
-/override
-/shaderpc
-/sound
+# Nuxt dev/build outputs
+.output
+.data
+.nuxt
+.nitro
+.cache
+dist
 
-/*.dll
-/*.exe
-/*.key
-/*.ini
-/*.lnk
-/*.ico
-/*.info
-/*.hashdb
-/*.script
-/*.dat
-/*.msg
-/*.zip
-
-EULA.txt
-stutter_fix_readme.txt
-package-lock.json
-
+# Node dependencies
 node_modules
+
+# Logs
+logs
+*.log
+
+# Misc
+.DS_Store
+.fleet
+.idea
+
+# Local env files
+.env
+.env.*
+!.env.example

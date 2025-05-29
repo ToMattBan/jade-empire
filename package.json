@@ -1,6 +1,21 @@
 {
+  "name": "nuxt-app",
+  "private": true,
+  "type": "module",
   "scripts": {
-    "tlk2xml": "./_tools/xoreos-tools-0.0.6-linux64/tlk2xml --utf8 ./dialog.tlk ./dialog.xml",
-    "xml2tlk": "./_tools/xoreos-tools-0.0.6-linux64/xml2tlk --jade ./dialog.xml ./dialog.tlk"
+    "build": "nuxt build",
+    "dev": "nuxt dev",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare"
+  },
+  "dependencies": {
+    "nuxt": "^3.17.4",
+    "vue": "^3.5.15",
+    "vue-router": "^4.5.1"
+  },
+  "packageManager": "pnpm@9.15.4+sha512.b2dc20e2fc72b3e18848459b37359a32064663e5627a51e4c74b2c29dd8e8e0491483c3abb40789cfd578bf362fb6ba8261b05f0387d76792ed6e23ea3b1b6a0",
+  "devDependencies": {
+    "sass": "^1.89.0"
   }
 }
