@@ -174,8 +174,7 @@ function saveTranslation() {
 }
 
 async function commitFile(xml: string) {
-  const bytes = new TextEncoder().encode(xml);
-  const base64Content = btoa(String.fromCharCode(...bytes));
+  const base64Content = window.btoa(unescape(encodeURIComponent(xml)));
 
   if (!userAuth.value.token) {
     await openTokenModal();
