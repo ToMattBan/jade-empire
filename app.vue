@@ -20,15 +20,15 @@
   </div>
 
   <div>
-    <div v-for="string of xmlList" class="list-container list-container--list"
+    <div v-for="(string, index) of xmlList" class="list-container list-container--list"
       :class="string.status === 'pending' && string.translated ? 'other' : string.status">
       <div class="list-container--row">
         <textarea disabled>{{ string.fakeOriginal }}</textarea>
         <textarea v-model="string.translated"></textarea>
       </div>
       <div class="checkTranslated" v-if="string.status === 'revising'">
-        <label for="checkTranslated">Marcar como traduzido</label>
-        <input name="checkTranslated" id="checkTranslated" type="checkbox" @change="markTranslated(string)" />
+        <label :for="`checkTranslated-${index}`">Marcar como traduzido</label>
+        <input :name="`checkTranslated-${index}`" :id="`checkTranslated-${index}`" type="checkbox" @change="markTranslated(string)" />
       </div>
     </div>
   </div>
@@ -120,8 +120,8 @@ async function getXML() {
   const fileInfo = await githubFileInfo.json();
   fileSha.value = fileInfo.sha;
 
-  const fileRawURL = `https://raw.githubusercontent.com/Unocroi/Jade_Empire/refs/heads/main/translatedlDialog.xml?t=${Date.now()}`;
-  //const fileRawURL = '/api/mockXml';
+  //const fileRawURL = `https://raw.githubusercontent.com/Unocroi/Jade_Empire/refs/heads/main/translatedlDialog.xml?t=${Date.now()}`;
+  const fileRawURL = '/api/mockXml';
 
   const githubXML = await fetch(fileRawURL);
   let xmlRaw = await githubXML.text();
