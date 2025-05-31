@@ -1,7 +1,7 @@
 export default defineEventHandler((event) => {
   return `<?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <tlk language="0">
-  <string status="revising" id="1">ERROR: UNEXPECTED CHARACTER</string>
+  <string status="revising" id="1">ERROR: UNEXPECTED CHARACTER ___ String traduzida</string>
   <string status="translated" id="2">ERROR: FATAL COMPILER ERROR</string>
   <string status="pending" id="3">ERROR: PROGRAM COMPOUND STATEMENT AT START</string>
   <string status="pending" id="4">ERROR: UNEXPECTED END COMPOUND STATEMENT</string>

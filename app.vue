@@ -83,8 +83,8 @@ async function getXML() {
   const fileInfo = await githubFileInfo.json();
   fileSha.value = fileInfo.sha;
 
-  const fileRawURL = `https://raw.githubusercontent.com/Unocroi/Jade_Empire/refs/heads/main/translatedlDialog.xml?t=${Date.now()}`;
-  //const fileRawURL = '/api/mockXml';
+  //const fileRawURL = `https://raw.githubusercontent.com/Unocroi/Jade_Empire/refs/heads/main/translatedlDialog.xml?t=${Date.now()}`;
+  const fileRawURL = '/api/mockXml';
 
   const githubXML = await fetch(fileRawURL);
   let xmlRaw = await githubXML.text();
@@ -94,21 +94,46 @@ async function getXML() {
     .replace('</tlk>', '');
 
   xmlList.value = xmlRaw.split(/(?<=>)\n/).filter(x => x.trim()).map(string => {
-    const stringContent = getXMLStringContent(string);
     const status = getXMLStatus(string);
+
+    if (status === 'revising') {
+      const firstHalf = getXMLStringContent(string, 'first');
+      const secondHalf = getXMLStringContent(string, 'second');
+      return {
+        original: string,
+        fakeOriginal: firstHalf,
+        translated: secondHalf,
+        status: status
+      }
+    }
+
+    const fullText = getXMLStringContent(string);
     return {
       original: string,
-      fakeOriginal: stringContent,
-      translated: status !== 'pending' ? stringContent : '',
+      fakeOriginal: fullText,
+      translated: status === 'pending' ? '' : fullText,
       status: status
     }
   })
 }
 
-function getXMLStringContent(string: string) {
+function getXMLStringContent(string: string, type?: 'first' | 'second'): string {
   const match = string.match(/(?<=>)(.*?)(?=<)/s);
   if (!match) console.warn(`Invalid or missing string content in: "${string}"`);
-  return match ? match[0] : string;
+
+  if (!match) return string;
+  if (!type) return match[0];
+
+  if (type === 'first') {
+    const halfMatch = string.match(/(?<=>)(.*?)(?= ___)/s);
+    return halfMatch ? halfMatch[0] : match[0]
+  }
+  if (type === 'second') {
+    const halfMatch = string.match(/(?<=___ )(.*?)(?=<)/s);
+    return halfMatch ? halfMatch[0] : match[0]
+  }
+
+  return string
 }
 
 function getXMLStatus(string: string): TStatus {
@@ -132,7 +157,7 @@ async function openTokenModal() {
 function saveTranslation() {
   const xmlTranslated = xmlList.value.map(string => {
     if (string.status === 'pending' && string.translated)
-      return string.original.replace(/(?<=>)(.*?)(?=<)/, string.translated).replace('pending', 'revising')
+      return string.original.replace(/(?<=>)(.*?)(?=<)/, (string.fakeOriginal + " ___ " + string.translated)).replace('pending', 'revising')
 
     if (string.status === 'translated' && string.revisedNow)
       return string.original.replace(/(?<=>)(.*?)(?=<)/, string.translated).replace('revising', 'translated')
@@ -157,7 +182,7 @@ async function commitFile(xml: string) {
   }
 
   const octokit = new Octokit({ auth: userAuth.value.token });
-  const response = await octokit.request('PUT /repos/{owner}/{repo}/contents/{path}', {
+  await octokit.request('PUT /repos/{owner}/{repo}/contents/{path}', {
     owner: 'Unocroi',
     repo: 'Jade_Empire',
     path: 'translatedlDialog.xml',
@@ -171,13 +196,12 @@ async function commitFile(xml: string) {
     headers: {
       'X-GitHub-Api-Version': '2022-11-28'
     }
-  })
-
-  if (response.status === 200) {
+  }).then(response => {
     getXML();
     alert('Conteúdo salvo!')
-  }
-  else alert('Algo deu errado ao salvar. Tente de novo ou chama a gente no Telegram');
+  }).catch(error => {
+    alert('Algo deu errado ao salvar. Tente de novo ou chama a gente no Telegram');
+  })
 }
 </script>
 
