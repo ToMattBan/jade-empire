@@ -83,7 +83,7 @@ async function getXML() {
   const fileInfo = await githubFileInfo.json();
   fileSha.value = fileInfo.sha;
 
-  const fileRawURL = fileInfo.download_url;
+  const fileRawURL = 'https://raw.githubusercontent.com/Unocroi/Jade_Empire/refs/heads/main/translatedlDialog.xml';
   //const fileRawURL = '/api/mockXml';
 
   const githubXML = await fetch(fileRawURL);
