@@ -83,8 +83,8 @@ async function getXML() {
   const fileInfo = await githubFileInfo.json();
   fileSha.value = fileInfo.sha;
 
-  //const fileRawURL = fileInfo.download_url;
-  const fileRawURL = '/api/mockXml';
+  const fileRawURL = fileInfo.download_url;
+  //const fileRawURL = '/api/mockXml';
 
   const githubXML = await fetch(fileRawURL);
   let xmlRaw = await githubXML.text();
