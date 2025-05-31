@@ -241,7 +241,7 @@ async function commitFile(xml: string) {
     alert('Conteúdo salvo!')
     getXML();
   }).catch(error => {
-    alert('Algo deu errado ao salvar. Tente de novo ou chama a gente no Telegram');
+    alert(`Algo deu errado ao salvar. Tente de novo ou chama a gente no Telegram e mostre isso --> \n${error}`, );
   })
 }
 
