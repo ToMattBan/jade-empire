@@ -83,7 +83,7 @@ async function getXML() {
   const fileInfo = await githubFileInfo.json();
   fileSha.value = fileInfo.sha;
 
-  const fileRawURL = 'https://raw.githubusercontent.com/Unocroi/Jade_Empire/refs/heads/main/translatedlDialog.xml';
+  const fileRawURL = `https://raw.githubusercontent.com/Unocroi/Jade_Empire/refs/heads/main/translatedlDialog.xml?t=${Date.now()}`;
   //const fileRawURL = '/api/mockXml';
 
   const githubXML = await fetch(fileRawURL);
@@ -149,7 +149,8 @@ function saveTranslation() {
 }
 
 async function commitFile(xml: string) {
-  const base64Content = btoa(xml);
+  const bytes = new TextEncoder().encode(xml);
+  const base64Content = btoa(String.fromCharCode(...bytes));
 
   if (!userAuth.value.token) {
     await openTokenModal();
