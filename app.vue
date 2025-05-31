@@ -69,6 +69,10 @@
 <script setup lang="ts">
 import { Octokit } from 'octokit';
 
+useHead({
+  title: "PROJETO - JADE EMPIRE BR"
+})
+
 interface IUser {
   name: string,
   email: string
@@ -409,7 +413,6 @@ footer {
     background-color: $other;
     border: solid 3px black;
     border-width: 3px 0 0 3px;
-    border-radius: 4px 0 0 0;
     cursor: pointer;
   }
 }
