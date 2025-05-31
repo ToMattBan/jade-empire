@@ -120,7 +120,7 @@ async function getXML() {
   const fileInfo = await githubFileInfo.json();
   fileSha.value = fileInfo.sha;
 
-  const fileRawURL = `https://unocroi.github.io/Jade_Empire/translatedlDialog.xml`;
+  const fileRawURL = `https://unocroi.github.io/Jade_Empire/translatedlDialog.xml?t=${Date.now()}`;
   //const fileRawURL = '/api/mockXml';
 
   const githubXML = await fetch(fileRawURL);
