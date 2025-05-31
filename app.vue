@@ -28,7 +28,8 @@
       </div>
       <div class="checkTranslated" v-if="string.status === 'revising'">
         <label :for="`checkTranslated-${index}`">Marcar como traduzido</label>
-        <input :name="`checkTranslated-${index}`" :id="`checkTranslated-${index}`" type="checkbox" @change="markTranslated(string)" />
+        <input :name="`checkTranslated-${index}`" :id="`checkTranslated-${index}`" type="checkbox"
+          @change="markTranslated(string)" />
       </div>
     </div>
   </div>
@@ -97,6 +98,10 @@ const xmlList = ref<IString[]>([]);
 const userAuth = ref<IUser>({ name: '', email: '', token: '' });
 
 onMounted(async () => {
+  userAuth.value.token = sessionStorage.getItem('token') ?? '';
+  userAuth.value.email = sessionStorage.getItem('email') ?? '';
+  userAuth.value.name = sessionStorage.getItem('name') ?? '';
+
   await getXML()
 })
 
@@ -118,13 +123,17 @@ async function getXML() {
 
   const githubFileInfo = await fetch('https://api.github.com/repos/Unocroi/Jade_Empire/contents/translatedlDialog.xml');
   const fileInfo = await githubFileInfo.json();
-  fileSha.value = fileInfo.sha;
 
-  const fileRawURL = `https://unocroi.github.io/Jade_Empire/translatedlDialog.xml?t=${Date.now()}`;
+  const rawFileInfo = await fetch(fileInfo.git_url);
+  const realFileInfo = await rawFileInfo.json();
+
+  fileSha.value = realFileInfo.sha;
+  let xmlRaw = decodeURIComponent(escape(window.atob(realFileInfo.content)));
+
   //const fileRawURL = '/api/mockXml';
+  //const githubXML = await fetch(fileRawURL);
+  //let xmlRaw = await githubXML.text();
 
-  const githubXML = await fetch(fileRawURL);
-  let xmlRaw = await githubXML.text();
   xmlRaw = xmlRaw
     .replace('<?xml version="1.0" encoding="utf-8" standalone="yes"?>', '')
     .replace('<tlk language="0">', '')
@@ -190,7 +199,11 @@ function markTranslated(string: IString) {
 }
 
 async function openTokenModal() {
-  await tokenModal.value.open();
+  await tokenModal.value.open().then(() => {
+    sessionStorage.setItem('token', userAuth.value.token);
+    sessionStorage.setItem('email', userAuth.value.email);
+    sessionStorage.setItem('name', userAuth.value.name);
+  });
 }
 
 function saveTranslation() {
@@ -240,11 +253,12 @@ async function commitFile(xml: string) {
   }).then(response => {
     alert('Conteúdo salvo!')
     isLoading.value = true;
+
     setTimeout(() => {
       getXML();
-    }, 30000)
+    }, 5000)
   }).catch(error => {
-    alert(`Algo deu errado ao salvar. Tente de novo ou chama a gente no Telegram e mostre isso --> \n${error}`, );
+    alert(`Algo deu errado ao salvar. Tente de novo ou chama a gente no Telegram e mostre isso --> \n${error}`,);
   })
 }
 
