@@ -14,6 +14,11 @@
     </div>
   </header>
 
+  <div v-if="isLoading" class="isLoading">
+    <span>Carregando o XML</span>
+    <span>Isso pode levar um tempinho...</span>
+  </div>
+
   <div v-for="string of xmlList" class="list-container list-container--list"
     :class="string.status === 'pending' && string.translated ? 'other' : string.status">
     <div class="list-container--row">
@@ -72,6 +77,7 @@ interface IString {
 
 const tokenModal = ref();
 
+const isLoading = ref<boolean>(false);
 const fileSha = ref<string>('');
 const xmlList = ref<IString[]>([]);
 const userAuth = ref<IUser>({ name: '', email: '', token: '' });
@@ -81,12 +87,14 @@ onMounted(async () => {
 })
 
 async function getXML() {
+  isLoading.value = true;
+
   const githubFileInfo = await fetch('https://api.github.com/repos/Unocroi/Jade_Empire/contents/translatedlDialog.xml');
   const fileInfo = await githubFileInfo.json();
   fileSha.value = fileInfo.sha;
 
-  const fileRawURL = `https://raw.githubusercontent.com/Unocroi/Jade_Empire/refs/heads/main/translatedlDialog.xml?t=${Date.now()}`;
-  //const fileRawURL = '/api/mockXml';
+  //const fileRawURL = `https://raw.githubusercontent.com/Unocroi/Jade_Empire/refs/heads/main/translatedlDialog.xml?t=${Date.now()}`;
+  const fileRawURL = '/api/mockXml';
 
   const githubXML = await fetch(fileRawURL);
   let xmlRaw = await githubXML.text();
@@ -117,6 +125,8 @@ async function getXML() {
       status: status
     }
   })
+
+  isLoading.value = false;
 }
 
 function getXMLStringContent(string: string, type?: 'first' | 'second'): string {
@@ -198,8 +208,8 @@ async function commitFile(xml: string) {
       'X-GitHub-Api-Version': '2022-11-28'
     }
   }).then(response => {
-    getXML();
     alert('Conteúdo salvo!')
+    getXML();
   }).catch(error => {
     alert('Algo deu errado ao salvar. Tente de novo ou chama a gente no Telegram');
   })
@@ -209,7 +219,7 @@ function nextString() {
   let nextString = document.querySelector('.revising');
   if (!nextString) nextString = document.querySelector('.pending');
   
-  if(nextString) nextString.scrollIntoView({behavior: 'smooth', block: 'center', inline: 'center'})
+  if (nextString) nextString.scrollIntoView({behavior: 'smooth', block: 'center', inline: 'center'})
 }
 </script>
 
@@ -271,6 +281,25 @@ header {
   }
 }
 
+.isLoading {
+  position: fixed;
+  inset: 0;
+  height: 100vh;
+  width: 100vw;
+  background-color: rgba(0,0,0,0.6);
+  z-index: 2;
+
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  color: white;
+  font-weight: 700;
+  font-size: 40px;
+  text-align: center;
+  justify-content: center;
+  align-items: center;
+}
+
 .list-container {
   padding-top: 4px;
   padding-bottom: 4px;
@@ -297,6 +326,10 @@ header {
     text-align: right;
     font-size: 12px;
     padding-bottom: 8px;
+
+    * {
+      cursor: pointer;
+    }
   }
 
 
