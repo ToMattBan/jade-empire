@@ -7,14 +7,23 @@
     </div>
 
     <div class="list-container list-container--title">
-      <h2>ORIGINAL</h2>
-      <h2>TRADUZIDO</h2>
+      <div class="list-container--row">
+        <h2>ORIGINAL</h2>
+        <h2>TRADUZIDO</h2>
+      </div>
     </div>
   </header>
 
-  <div v-for="(x, index) of xmlList" class="list-container list-container--list">
-    <textarea disabled>{{ showXMLStringContent(xmlList[index]) }}</textarea>
-    <textarea v-model="translatedList[index]">a</textarea>
+  <div v-for="string of xmlList" class="list-container list-container--list"
+    :class="string.status === 'pending' && string.translated ? 'other' : string.status">
+    <div class="list-container--row">
+      <textarea disabled>{{ string.fakeOriginal }}</textarea>
+      <textarea v-model="string.translated"></textarea>
+    </div>
+    <div class="checkTranslated" v-if="string.status === 'revising'">
+      <label for="checkTranslated">Marcar como traduzido</label>
+      <input name="checkTranslated" id="checkTranslated" type="checkbox" @change="markTranslated(string)" />
+    </div>
   </div>
 
   <AsyncModal ref="tokenModal">
@@ -24,17 +33,17 @@
 
       <div class="data-container">
         <label for="username">Username</label>
-        <input name="username" v-model="userAuth.name" />
+        <input name="username" id="username" v-model="userAuth.name" />
       </div>
 
       <div class="data-container">
         <label for="email">Email</label>
-        <input name="email" type="email" v-model="userAuth.email" />
+        <input name="email" id="email" type="email" v-model="userAuth.email" />
       </div>
 
       <div class="data-container">
         <label for="token">Github Token</label>
-        <input name="token" v-model="userAuth.token" />
+        <input name="token" id="token" v-model="userAuth.token" />
       </div>
     </div>
   </AsyncModal>
@@ -49,11 +58,20 @@ interface IUser {
   token: string
 }
 
+type TStatus = 'revising' | 'translated' | 'pending';
+
+interface IString {
+  original: string,
+  fakeOriginal: string,
+  translated: string,
+  status: TStatus,
+  revisedNow?: boolean
+}
+
 const tokenModal = ref();
 
 const fileSha = ref<string>('');
-const xmlList = ref<string[]>([]);
-const translatedList = ref<string[]>([]);
+const xmlList = ref<IString[]>([]);
 const userAuth = ref<IUser>({ name: '', email: '', token: '' });
 
 onMounted(async () => {
@@ -75,14 +93,36 @@ async function getXML() {
     .replace('<tlk language="0">', '')
     .replace('</tlk>', '');
 
-  xmlList.value = xmlRaw.split(/(?<=>)\n/).filter(x => x.trim());
-  translatedList.value = Array(xmlList.value.length).fill(null);
+  xmlList.value = xmlRaw.split(/(?<=>)\n/).filter(x => x.trim()).map(string => {
+    const stringContent = getXMLStringContent(string);
+    const status = getXMLStatus(string);
+    return {
+      original: string,
+      fakeOriginal: stringContent,
+      translated: status !== 'pending' ? stringContent : '',
+      status: status
+    }
+  })
 }
 
-function showXMLStringContent(string: string) {
+function getXMLStringContent(string: string) {
   const match = string.match(/(?<=>)(.*?)(?=<)/s);
-  if (!match) console.log(string, match)
+  if (!match) console.warn(`Invalid or missing string content in: "${string}"`);
   return match ? match[0] : string;
+}
+
+function getXMLStatus(string: string): TStatus {
+  const match = string.match(/(?<=status=")(.*?)(?=")/);
+  if (!match) {
+    console.warn(`Invalid or missing status in string: "${string}"`);
+    return 'pending'
+  }
+  return match[0] as TStatus;
+}
+
+function markTranslated(string: IString) {
+  string.status = 'translated';
+  string.revisedNow = true;
 }
 
 async function openTokenModal() {
@@ -90,11 +130,14 @@ async function openTokenModal() {
 }
 
 function saveTranslation() {
-  const xmlTranslated = xmlList.value.map((string, index) => {
-    if (translatedList.value[index])
-      return string.replace(/(?<=>)(.*?)(?=<)/, translatedList.value[index]);
-    else
-      return string;
+  const xmlTranslated = xmlList.value.map(string => {
+    if (string.status === 'pending' && string.translated)
+      return string.original.replace(/(?<=>)(.*?)(?=<)/, string.translated).replace('pending', 'revising')
+
+    if (string.status === 'translated' && string.revisedNow)
+      return string.original.replace(/(?<=>)(.*?)(?=<)/, string.translated).replace('revising', 'translated')
+
+    return string.original
   })
 
   const joinedXml = xmlTranslated.join('\n').trim();
@@ -128,13 +171,22 @@ async function commitFile(xml: string) {
       'X-GitHub-Api-Version': '2022-11-28'
     }
   })
-  
-  if (response.status === 200) alert('Conteúdo salvo!')
+
+  if (response.status === 200) {
+    getXML();
+    alert('Conteúdo salvo!')
+  }
   else alert('Algo deu errado ao salvar. Tente de novo ou chama a gente no Telegram');
 }
 </script>
 
 <style lang="scss" scoped>
+// SETTING COLORS VARS
+$translated: #4caf50;
+$revising: #eaea13;
+$pending: #f44336;
+$other: #14468b;
+
 header {
   position: sticky;
   top: 0px;
@@ -167,12 +219,12 @@ header {
 
       &.btn--config {
         left: 0;
-        background-color: #14468b;
+        background-color: $other;
       }
 
       &.btn--save {
         right: 0;
-        background-color: #4caf50;
+        background-color: $translated;
       }
 
       &:hover {
@@ -183,23 +235,48 @@ header {
 }
 
 .list-container {
-  display: flex;
-  gap: 4px;
-  margin-top: 8px;
+  padding-top: 4px;
+  padding-bottom: 4px;
 
-  >* {
-    flex: 50%;
-  }
-
-  >h2 {
+  .list-container--row {
+    display: flex;
+    gap: 4px;
     text-align: center;
-    margin: 8px;
-  }
 
-  &--list {
+    >* {
+      flex: 1;
+    }
+
+    h2 {
+      margin: 8px;
+    }
+
     textarea:disabled {
       color: rgb(0, 0, 0);
     }
+  }
+
+  .checkTranslated {
+    text-align: right;
+    font-size: 12px;
+    padding-bottom: 8px;
+  }
+
+
+  &.translated {
+    background-color: $translated;
+  }
+
+  &.revising {
+    background-color: $revising;
+  }
+
+  &.pending {
+    background-color: $pending;
+  }
+
+  &.other {
+    background-color: $other;
   }
 }
 
