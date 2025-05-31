@@ -26,6 +26,8 @@
     </div>
   </div>
 
+  <button class="next-button" title="Próxima linha" @click="nextString">V</button>
+
   <AsyncModal ref="tokenModal">
     <div class="githubForm">
       <h2>Preencha os dados abaixo</h2>
@@ -83,8 +85,8 @@ async function getXML() {
   const fileInfo = await githubFileInfo.json();
   fileSha.value = fileInfo.sha;
 
-  const fileRawURL = `https://raw.githubusercontent.com/Unocroi/Jade_Empire/refs/heads/main/translatedlDialog.xml?t=${Date.now()}`;
-  //const fileRawURL = '/api/mockXml';
+  //const fileRawURL = `https://raw.githubusercontent.com/Unocroi/Jade_Empire/refs/heads/main/translatedlDialog.xml?t=${Date.now()}`;
+  const fileRawURL = '/api/mockXml';
 
   const githubXML = await fetch(fileRawURL);
   let xmlRaw = await githubXML.text();
@@ -202,6 +204,13 @@ async function commitFile(xml: string) {
     alert('Algo deu errado ao salvar. Tente de novo ou chama a gente no Telegram');
   })
 }
+
+function nextString() {
+  let nextString = document.querySelector('.revising');
+  if (!nextString) nextString = document.querySelector('.pending');
+  
+  if(nextString) nextString.scrollIntoView({behavior: 'smooth', block: 'center', inline: 'center'})
+}
 </script>
 
 <style lang="scss" scoped>
@@ -210,6 +219,10 @@ $translated: #4caf50;
 $revising: #eaea13;
 $pending: #f44336;
 $other: #14468b;
+
+* {
+  scroll-behavior: smooth;
+}
 
 header {
   position: sticky;
@@ -302,6 +315,19 @@ header {
   &.other {
     background-color: $other;
   }
+}
+
+.next-button {
+  position: fixed;
+  inset: auto 0 0 auto;
+  aspect-ratio: 1/1;
+  width: 60px;
+  color: white;
+  background-color: $other;
+  border: solid 3px black;
+  border-width: 3px 0 0 3px;
+  border-radius: 4px 0 0 0;
+  cursor: pointer;
 }
 
 .githubForm {
