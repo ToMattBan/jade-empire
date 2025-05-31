@@ -196,10 +196,13 @@ async function openTokenModal() {
 function saveTranslation() {
   const xmlTranslated = xmlList.value.map(string => {
     if (string.status === 'pending' && string.translated)
-      return string.original.replace(/(?<=>)(.*?)(?=<)/, (string.fakeOriginal + " ___ " + string.translated)).replace('pending', 'revising')
+      return string.original.replace(/(?<=>)(.*?)(?=<)/s, (string.fakeOriginal + " ___ " + string.translated)).replace('pending', 'revising');
+
+    if (string.status === 'revising' && string.translated)
+      return string.original.replace(/(?<=>)(.*?)(?=<)/s, (string.fakeOriginal + " ___ " + string.translated));
 
     if (string.status === 'translated' && string.revisedNow)
-      return string.original.replace(/(?<=>)(.*?)(?=<)/, string.translated).replace('revising', 'translated')
+      return string.original.replace(/(?<=>)(.*?)(?=<)/s, string.translated).replace('revising', 'translated');
 
     return string.original
   })
