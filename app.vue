@@ -19,19 +19,29 @@
     <span>Isso pode levar um tempinho...</span>
   </div>
 
-  <div v-for="string of xmlList" class="list-container list-container--list"
-    :class="string.status === 'pending' && string.translated ? 'other' : string.status">
-    <div class="list-container--row">
-      <textarea disabled>{{ string.fakeOriginal }}</textarea>
-      <textarea v-model="string.translated"></textarea>
-    </div>
-    <div class="checkTranslated" v-if="string.status === 'revising'">
-      <label for="checkTranslated">Marcar como traduzido</label>
-      <input name="checkTranslated" id="checkTranslated" type="checkbox" @change="markTranslated(string)" />
+  <div>
+    <div v-for="string of xmlList" class="list-container list-container--list"
+      :class="string.status === 'pending' && string.translated ? 'other' : string.status">
+      <div class="list-container--row">
+        <textarea disabled>{{ string.fakeOriginal }}</textarea>
+        <textarea v-model="string.translated"></textarea>
+      </div>
+      <div class="checkTranslated" v-if="string.status === 'revising'">
+        <label for="checkTranslated">Marcar como traduzido</label>
+        <input name="checkTranslated" id="checkTranslated" type="checkbox" @change="markTranslated(string)" />
+      </div>
     </div>
   </div>
 
-  <button class="next-button" title="Próxima linha" @click="nextString">V</button>
+  <footer>
+    <div class="progress-bar--container">
+      <div class="progress-bar progress-bar--pending" :style="{ 'width': pendingPercentage }"></div>
+      <div class="progress-bar progress-bar--revising" :style="{ 'width': revisingPercentage }"></div>
+      <div class="progress-bar progress-bar--translated" :style="{ 'width': translatedPercentage }"></div>
+    </div>
+    <button class="next-button" title="Próxima linha" @click="nextString">↓</button>
+  </footer>
+
 
   <AsyncModal ref="tokenModal">
     <div class="githubForm">
@@ -84,6 +94,19 @@ const userAuth = ref<IUser>({ name: '', email: '', token: '' });
 
 onMounted(async () => {
   await getXML()
+})
+
+const pendingPercentage = computed(() => {
+  const perc = xmlList.value.filter(string => string.status === 'pending').length / xmlList.value.length * 100
+  return `${perc}%`
+})
+const revisingPercentage = computed(() => {
+  const perc = xmlList.value.filter(string => string.status === 'revising').length / xmlList.value.length * 100
+  return `${perc}%`
+})
+const translatedPercentage = computed(() => {
+  const perc = xmlList.value.filter(string => string.status === 'translated').length / xmlList.value.length * 100
+  return `${perc}%`
 })
 
 async function getXML() {
@@ -218,8 +241,8 @@ async function commitFile(xml: string) {
 function nextString() {
   let nextString = document.querySelector('.revising');
   if (!nextString) nextString = document.querySelector('.pending');
-  
-  if (nextString) nextString.scrollIntoView({behavior: 'smooth', block: 'center', inline: 'center'})
+
+  if (nextString) nextString.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' })
 }
 </script>
 
@@ -286,7 +309,7 @@ header {
   inset: 0;
   height: 100vh;
   width: 100vw;
-  background-color: rgba(0,0,0,0.6);
+  background-color: rgba(0, 0, 0, 0.6);
   z-index: 2;
 
   display: flex;
@@ -350,17 +373,45 @@ header {
   }
 }
 
-.next-button {
+footer {
   position: fixed;
   inset: auto 0 0 auto;
-  aspect-ratio: 1/1;
-  width: 60px;
-  color: white;
-  background-color: $other;
-  border: solid 3px black;
-  border-width: 3px 0 0 3px;
-  border-radius: 4px 0 0 0;
-  cursor: pointer;
+  height: 60px;
+  display: flex;
+  width: 100%;
+
+  .progress-bar--container {
+    width: 100%;
+    display: flex;
+
+    .progress-bar {
+      height: 100%;
+
+      &--pending {
+        background-color: $pending;
+      }
+
+      &--revising {
+        background-color: $revising;
+      }
+
+      &--translated {
+        background-color: $translated;
+      }
+    }
+  }
+
+  .next-button {
+    aspect-ratio: 1/1;
+    height: 100%;
+    color: white;
+    font-size: 20px;
+    background-color: $other;
+    border: solid 3px black;
+    border-width: 3px 0 0 3px;
+    border-radius: 4px 0 0 0;
+    cursor: pointer;
+  }
 }
 
 .githubForm {
