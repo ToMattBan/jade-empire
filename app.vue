@@ -1,9 +1,9 @@
 <template>
   <header>
     <div class="header">
-      <button class="btn--config" @click="openTokenModal">CONFIGS</button>
+      <!-- <button class="btn--config" @click="openTokenModal">CONFIGS</button> -->
       <h1>PROJETO - JADE EMPIRE BR</h1>
-      <button class="btn--save" @click="saveTranslation">SALVAR</button>
+      <!-- <button class="btn--save" @click="">SALVAR</button> -->
     </div>
 
     <div class="list-container list-container--title">
@@ -20,29 +20,28 @@
   </div>
 
   <div>
-    <div v-for="(string, index) of xmlList" class="list-container list-container--list"
-      :class="string.status === 'pending' && string.translated ? 'other' : string.status">
+    <div v-for="string of xmlList" class="list-container list-container--list"
+      :class="string.changedNow ? 'changedNow' : string.status">
       <div class="list-container--row">
-        <textarea disabled>{{ string.fakeOriginal }}</textarea>
-        <textarea v-model="string.translated"></textarea>
+        <textarea disabled>{{ string.original }}</textarea>
+        <textarea v-model="string.newTranslation" @blur="changeStatus(string, 'revising')"></textarea>
       </div>
-      <div class="checkTranslated" v-if="string.status === 'revising'">
-        <label :for="`checkTranslated-${index}`">Marcar como traduzido</label>
-        <input :name="`checkTranslated-${index}`" :id="`checkTranslated-${index}`" type="checkbox"
-          @change="markTranslated(string)" />
+      <div class="checkTranslated" v-if="string.status === 'revising' && !string.changedNow">
+        <label :for="`checkTranslated-${string._id}`">Marcar como traduzido</label>
+        <input :name="`checkTranslated-${string._id}`" :id="`checkTranslated-${string._id}`" type="checkbox"
+          @change="changeStatus(string, 'translated')" />
       </div>
     </div>
   </div>
 
   <footer>
     <div class="progress-bar--container">
-      <div class="progress-bar progress-bar--pending" :style="{ 'width': pendingPercentage }"></div>
-      <div class="progress-bar progress-bar--revising" :style="{ 'width': revisingPercentage }"></div>
-      <div class="progress-bar progress-bar--translated" :style="{ 'width': translatedPercentage }"></div>
+      <div class="progress-bar progress-bar--pending" :style="{ 'width': `${pendingPercentage}%` }"></div>
+      <div class="progress-bar progress-bar--revising" :style="{ 'width': `${revisingPercentage}%` }"></div>
+      <div class="progress-bar progress-bar--translated" :style="{ 'width': `${translatedPercentage}%` }"></div>
     </div>
     <button class="next-button" title="Próxima linha" @click="nextString">↓</button>
   </footer>
-
 
   <AsyncModal ref="tokenModal">
     <div class="githubForm">
@@ -68,139 +67,88 @@
 </template>
 
 <script setup lang="ts">
-import { Octokit } from 'octokit';
+import type { IString, IUser, TStatus } from './interfaces/interfaces';
 
 useHead({
   title: "PROJETO - JADE EMPIRE BR"
 })
 
-interface IUser {
-  name: string,
-  email: string
-  token: string
-}
-
-type TStatus = 'revising' | 'translated' | 'pending';
-
-interface IString {
-  original: string,
-  fakeOriginal: string,
-  translated: string,
-  status: TStatus,
-  revisedNow?: boolean
-}
-
 const tokenModal = ref();
 
+const pendingPercentage = ref<number>(0);
+const revisingPercentage = ref<number>(0);
+const translatedPercentage = ref<number>(0);
+
 const isLoading = ref<boolean>(false);
-const fileSha = ref<string>('');
-const xmlList = ref<IString[]>([]);
+const xmlList = ref<IString[]>();
 const userAuth = ref<IUser>({ name: '', email: '', token: '' });
+
+let stringSalvaErrorCount = 0;
 
 onMounted(async () => {
   userAuth.value.token = sessionStorage.getItem('token') ?? '';
   userAuth.value.email = sessionStorage.getItem('email') ?? '';
   userAuth.value.name = sessionStorage.getItem('name') ?? '';
 
-  await getXML()
+  getPercentageCount();
+  await getXML();
 })
 
-const pendingPercentage = computed(() => {
-  const perc = xmlList.value.filter(string => string.status === 'pending').length / xmlList.value.length * 100
-  return `${perc}%`
-})
-const revisingPercentage = computed(() => {
-  const perc = xmlList.value.filter(string => string.status === 'revising').length / xmlList.value.length * 100
-  return `${perc}%`
-})
-const translatedPercentage = computed(() => {
-  const perc = xmlList.value.filter(string => string.status === 'translated').length / xmlList.value.length * 100
-  return `${perc}%`
-})
+async function getPercentageCount() {
+  if (pendingPercentage.value != 0) return;
 
-async function getXMLSha(): Promise<string> {
-  const githubFileInfo = await fetch('https://api.github.com/repos/Unocroi/Jade_Empire/contents/translatedlDialog.xml');
-  const fileInfo = await githubFileInfo.json();
-  fileSha.value = fileInfo.sha;
-  return fileInfo.git_url;
+  const percentages = await $fetch('/api/getPercentage', { method: "GET" });
+  if (!percentages) return;
+
+  revisingPercentage.value = percentages.revising;
+  translatedPercentage.value = percentages.translated;
+  pendingPercentage.value = percentages.pending;
 }
 
 async function getXML() {
   isLoading.value = true;
 
-  const gitUrl = await getXMLSha();
+  const allStrings = await $fetch(`/api/getStrings`, { method: "GET" });
+  //const allStrings = await $fetch(`/api/mockXml`, { method: "GET" });
+  if (!allStrings) return;
 
-  const rawFileInfo = await fetch(gitUrl);
-  const realFileInfo = await rawFileInfo.json();
-
-  let xmlRaw = decodeURIComponent(escape(window.atob(realFileInfo.content)));
-
-  //const fileRawURL = '/api/mockXml';
-  //const githubXML = await fetch(fileRawURL);
-  //let xmlRaw = await githubXML.text();
-
-  xmlRaw = xmlRaw
-    .replace('<?xml version="1.0" encoding="utf-8" standalone="yes"?>', '')
-    .replace('<tlk language="0">', '')
-    .replace('</tlk>', '');
-
-  xmlList.value = xmlRaw.split(/(?<=>)\n/).filter(x => x.trim()).map(string => {
-    const status = getXMLStatus(string);
-
-    if (status === 'revising') {
-      const firstHalf = getXMLStringContent(string, 'first');
-      const secondHalf = getXMLStringContent(string, 'second');
-      return {
-        original: string,
-        fakeOriginal: firstHalf,
-        translated: secondHalf,
-        status: status
-      }
-    }
-
-    const fullText = getXMLStringContent(string);
+  xmlList.value = allStrings.map(string => {
     return {
-      original: string,
-      fakeOriginal: fullText,
-      translated: status === 'pending' ? '' : fullText,
-      status: status
+      ...string,
+      newTranslation: string.translated
     }
-  })
+  });
 
   isLoading.value = false;
 }
 
-function getXMLStringContent(string: string, type?: 'first' | 'second'): string {
-  const match = string.match(/(?<=>)(.*?)(?=<)/s);
-  if (!match) console.warn(`Invalid or missing string content in: "${string}"`);
+function changeStatus(string: IString, status: TStatus) {
+  if (status === 'translated') {
+    string.status = status;
+    saveString(string);
+  } else {
+    if (string.newTranslation === string.translated) return;
 
-  if (!match) return string;
-  if (!type) return match[0];
-
-  if (type === 'first') {
-    const halfMatch = string.match(/(?<=>)(.*?)(?= ___)/s);
-    return halfMatch ? halfMatch[0] : match[0]
+    string.changedNow = true;
+    string.status = status;
+    saveString(string);
   }
-  if (type === 'second') {
-    const halfMatch = string.match(/(?<=___ )(.*?)(?=<)/s);
-    return halfMatch ? halfMatch[0] : match[0]
-  }
-
-  return string
 }
 
-function getXMLStatus(string: string): TStatus {
-  const match = string.match(/(?<=status=")(.*?)(?=")/);
-  if (!match) {
-    console.warn(`Invalid or missing status in string: "${string}"`);
-    return 'pending'
-  }
-  return match[0] as TStatus;
-}
+async function saveString(string: IString) {
+  const res = await $fetch('/api/saveString', {
+    method: "POST",
+    body: string
+  })
 
-function markTranslated(string: IString) {
-  string.status = 'translated';
-  string.revisedNow = true;
+  if (res.status !== 200) {
+    console.error('Não deu pra salvar essa string!!');
+    stringSalvaErrorCount = stringSalvaErrorCount + 1;
+
+    if (stringSalvaErrorCount > 10) {
+      alert('Houveram 10 strings que não deu pra salvar, alguma coisa deu errado!')
+    }
+  }
 }
 
 async function openTokenModal() {
@@ -209,64 +157,6 @@ async function openTokenModal() {
     sessionStorage.setItem('email', userAuth.value.email);
     sessionStorage.setItem('name', userAuth.value.name);
   });
-}
-
-function saveTranslation() {
-  const xmlTranslated = xmlList.value.map(string => {
-    if (string.status === 'pending' && string.translated)
-      return string.original.replace(/(?<=>)(.*?)(?=<)/s, (string.fakeOriginal + " ___ " + string.translated)).replace('pending', 'revising');
-
-    if (string.status === 'revising' && string.translated)
-      return string.original.replace(/(?<=>)(.*?)(?=<)/s, (string.fakeOriginal + " ___ " + string.translated));
-
-    if (string.status === 'translated' && string.revisedNow)
-      return string.original.replace(/(?<=>)(.*?)(?=<)/s, string.translated).replace('revising', 'translated');
-
-    return string.original
-  })
-
-  const joinedXml = xmlTranslated.join('\n').trim();
-  const totalXml =
-    '<?xml version="1.0" encoding="utf-8" standalone="yes"?>\n' +
-    '<tlk language="0">\n' + joinedXml + '\n</tlk>';
-
-  commitFile(totalXml);
-}
-
-async function commitFile(xml: string) {
-  const base64Content = window.btoa(unescape(encodeURIComponent(xml)));
-
-  if (!userAuth.value.token) {
-    await openTokenModal();
-  }
-
-  await getXMLSha();
-
-  const octokit = new Octokit({ auth: userAuth.value.token });
-  await octokit.request('PUT /repos/{owner}/{repo}/contents/{path}', {
-    owner: 'Unocroi',
-    repo: 'Jade_Empire',
-    path: 'translatedlDialog.xml',
-    message: 'Atualizando tradução',
-    committer: {
-      name: userAuth.value.name,
-      email: userAuth.value.email
-    },
-    content: base64Content,
-    sha: fileSha.value,
-    headers: {
-      'X-GitHub-Api-Version': '2022-11-28'
-    }
-  }).then(response => {
-    alert('Conteúdo salvo!')
-    isLoading.value = true;
-
-    setTimeout(() => {
-      getXML();
-    }, 20000)
-  }).catch(error => {
-    alert(`Algo deu errado ao salvar. Tente de novo ou chama a gente no Telegram e mostre isso --> \n${error}`,);
-  })
 }
 
 function nextString() {
@@ -399,7 +289,7 @@ header {
     background-color: $pending;
   }
 
-  &.other {
+  &.changedNow {
     background-color: $other;
   }
 }
