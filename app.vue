@@ -263,7 +263,7 @@ async function commitFile(xml: string) {
 
     setTimeout(() => {
       getXML();
-    }, 5000)
+    }, 20000)
   }).catch(error => {
     alert(`Algo deu errado ao salvar. Tente de novo ou chama a gente no Telegram e mostre isso --> \n${error}`,);
   })
