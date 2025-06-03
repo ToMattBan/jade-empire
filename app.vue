@@ -123,19 +123,18 @@ async function getXML() {
 }
 
 function changeStatus(string: IString, status: TStatus) {
-  if (status === 'translated') {
-    string.status = status;
-    saveString(string);
-  } else {
-    if (string.newTranslation === string.translated) return;
+  const fakeString = { ...string }
 
+  if (status !== 'translated') {
+    if (string.newTranslation === string.translated) return;
     string.changedNow = true;
-    string.status = status;
-    saveString(string);
   }
+
+  string.status = status;
+  saveString(string, fakeString);
 }
 
-async function saveString(string: IString) {
+async function saveString(string: IString, fakeString: IString) {
   const res = await $fetch('/api/saveString', {
     method: "POST",
     body: string
@@ -143,11 +142,7 @@ async function saveString(string: IString) {
 
   if (res.status !== 200) {
     console.error('Não deu pra salvar essa string!!');
-    stringSalvaErrorCount = stringSalvaErrorCount + 1;
-
-    if (stringSalvaErrorCount > 10) {
-      alert('Houveram 10 strings que não deu pra salvar, alguma coisa deu errado!')
-    }
+    string = fakeString;
   }
 }
 
