@@ -118,16 +118,21 @@ const translatedPercentage = computed(() => {
   return `${perc}%`
 })
 
+async function getXMLSha(): Promise<string> {
+  const githubFileInfo = await fetch('https://api.github.com/repos/Unocroi/Jade_Empire/contents/translatedlDialog.xml');
+  const fileInfo = await githubFileInfo.json();
+  fileSha.value = fileInfo.sha;
+  return fileInfo.git_url;
+}
+
 async function getXML() {
   isLoading.value = true;
 
-  const githubFileInfo = await fetch('https://api.github.com/repos/Unocroi/Jade_Empire/contents/translatedlDialog.xml');
-  const fileInfo = await githubFileInfo.json();
+  const gitUrl = await getXMLSha();
 
-  const rawFileInfo = await fetch(fileInfo.git_url);
+  const rawFileInfo = await fetch(gitUrl);
   const realFileInfo = await rawFileInfo.json();
 
-  fileSha.value = realFileInfo.sha;
   let xmlRaw = decodeURIComponent(escape(window.atob(realFileInfo.content)));
 
   //const fileRawURL = '/api/mockXml';
@@ -234,6 +239,8 @@ async function commitFile(xml: string) {
   if (!userAuth.value.token) {
     await openTokenModal();
   }
+
+  await getXMLSha();
 
   const octokit = new Octokit({ auth: userAuth.value.token });
   await octokit.request('PUT /repos/{owner}/{repo}/contents/{path}', {
