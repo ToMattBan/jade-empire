@@ -106,8 +106,8 @@ async function getPercentageCount() {
 async function getXML() {
   isLoading.value = true;
 
-  const allStrings = await $fetch(`/api/getStrings`, { method: "GET" });
-  //const allStrings = await $fetch(`/api/mockXml`, { method: "GET" });
+  //const allStrings = await $fetch(`/api/getStrings`, { method: "GET" });
+  const allStrings = await $fetch(`/api/mockXml`, { method: "GET" });
   if (!allStrings) return;
 
   xmlList.value = allStrings.map(string => {
@@ -127,7 +127,8 @@ function changeStatus(string: IString, status: TStatus) {
     if (string.newTranslation === string.translated) return;
     string.changedNow = true;
   }
-
+  
+  string.translated = string.newTranslation || string.translated;
   string.status = status;
   saveString(string, fakeString);
 }
