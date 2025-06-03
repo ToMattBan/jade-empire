@@ -83,8 +83,6 @@ const isLoading = ref<boolean>(false);
 const xmlList = ref<IString[]>();
 const userAuth = ref<IUser>({ name: '', email: '', token: '' });
 
-let stringSalvaErrorCount = 0;
-
 onMounted(async () => {
   userAuth.value.token = sessionStorage.getItem('token') ?? '';
   userAuth.value.email = sessionStorage.getItem('email') ?? '';
