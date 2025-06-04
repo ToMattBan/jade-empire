@@ -6,6 +6,11 @@
       <!-- <button class="btn--save" @click="">SALVAR</button> -->
     </div>
 
+    <div class="search">
+      <span>BUSCA: </span>
+      <input v-model="searchTerm" />
+    </div>
+
     <div class="list-container list-container--title">
       <div class="list-container--row">
         <h2>ORIGINAL</h2>
@@ -20,7 +25,7 @@
   </div>
 
   <div class="content">
-    <div v-for="string of pagination()" class="list-container list-container--list"
+    <div v-for="string of filteredList()" class="list-container list-container--list"
       :class="string.changedNow ? 'changedNow' : string.status">
       <div class="list-container--row">
         <textarea disabled>{{ string.original }}</textarea>
@@ -66,24 +71,18 @@
 
     <div class="bottom-footer">
       <div class="progress-bar--container">
-        <div class="progress-bar progress-bar--pending"
-          :style="{ 'width': `${pendingPercentage}%` }"
-          :title="pendingPercentage.toFixed(2) + '%'"
-        >
+        <div class="progress-bar progress-bar--pending" :style="{ 'width': `${pendingPercentage}%` }"
+          :title="pendingPercentage.toFixed(2) + '%'">
           {{ pendingPercentage.toFixed(2) }}%
         </div>
 
-        <div class="progress-bar progress-bar--revising"
-          :style="{ 'width': `${revisingPercentage}%` }"
-          :title="revisingPercentage.toFixed(2) + '%'"
-        >
+        <div class="progress-bar progress-bar--revising" :style="{ 'width': `${revisingPercentage}%` }"
+          :title="revisingPercentage.toFixed(2) + '%'">
           {{ revisingPercentage.toFixed(2) }}%
         </div>
 
-        <div class="progress-bar progress-bar--translated"
-          :style="{ 'width': `${translatedPercentage}%` }"
-          :title="translatedPercentage.toFixed(2) + '%'"
-        >
+        <div class="progress-bar progress-bar--translated" :style="{ 'width': `${translatedPercentage}%` }"
+          :title="translatedPercentage.toFixed(2) + '%'">
           {{ translatedPercentage.toFixed(2) }}%
         </div>
       </div>
@@ -105,8 +104,9 @@ const pendingPercentage = ref<number>(0);
 const revisingPercentage = ref<number>(0);
 const translatedPercentage = ref<number>(0);
 
-const page = ref<number>(1);
 const isLoading = ref<boolean>(false);
+const page = ref<number>(1);
+const searchTerm = ref<string>('');
 const xmlList = ref<IString[]>([]);
 const userAuth = ref<IUser>({ name: '', email: '', token: '' });
 
@@ -205,8 +205,12 @@ async function downloadXML() {
   setTimeout(function () { URL.revokeObjectURL(a.href); }, 1500);
 }
 
-function pagination() {
-  return xmlList.value.slice((page.value - 1) * 1000, page.value * 1000)
+function filteredList() {
+  const filtered = xmlList.value.filter(string => string.original.includes(searchTerm.value));
+  totalPages = filtered.length / 1000 + 1
+  totalPages = Math.floor(totalPages);
+  
+  return filtered.slice((page.value - 1) * 1000, page.value * 1000)
 }
 
 async function openTokenModal() {
@@ -279,6 +283,18 @@ header {
       &:hover {
         filter: brightness(1.5);
       }
+    }
+  }
+
+  .search {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    input {
+      border-radius: 4px;
+      width: 100%;
+      padding: 4px 8px;
     }
   }
 }
@@ -374,6 +390,7 @@ footer {
       color: white;
       border: none;
       border-radius: 4px;
+      cursor: pointer;
 
       &.show-btn {
         opacity: 1;
