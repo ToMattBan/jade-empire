@@ -60,13 +60,32 @@
     <div class="pagination">
       <button class="next-page" @click="page = page - 1" :class="{ 'show-btn': page > 1 }">PÁGINA ANTERIOR</button>
       <span>Página {{ page }} de {{ totalPages }}</span>
-      <button class="prev-page" @click="page = page + 1" :class="{ 'show-btn': page < totalPages }">PRÓXIMA PÁGINA</button>
+      <button class="prev-page" @click="page = page + 1" :class="{ 'show-btn': page < totalPages }">PRÓXIMA
+        PÁGINA</button>
     </div>
+
     <div class="bottom-footer">
       <div class="progress-bar--container">
-        <div class="progress-bar progress-bar--pending" :style="{ 'width': `${pendingPercentage}%` }"></div>
-        <div class="progress-bar progress-bar--revising" :style="{ 'width': `${revisingPercentage}%` }"></div>
-        <div class="progress-bar progress-bar--translated" :style="{ 'width': `${translatedPercentage}%` }"></div>
+        <div class="progress-bar progress-bar--pending"
+          :style="{ 'width': `${pendingPercentage}%` }"
+          :title="pendingPercentage.toFixed(2) + '%'"
+        >
+          {{ pendingPercentage.toFixed(2) }}%
+        </div>
+
+        <div class="progress-bar progress-bar--revising"
+          :style="{ 'width': `${revisingPercentage}%` }"
+          :title="revisingPercentage.toFixed(2) + '%'"
+        >
+          {{ revisingPercentage.toFixed(2) }}%
+        </div>
+
+        <div class="progress-bar progress-bar--translated"
+          :style="{ 'width': `${translatedPercentage}%` }"
+          :title="translatedPercentage.toFixed(2) + '%'"
+        >
+          {{ translatedPercentage.toFixed(2) }}%
+        </div>
       </div>
       <button class="next-button" title="Próxima linha" @click="nextString">↓</button>
     </div>
@@ -373,6 +392,11 @@ footer {
 
       .progress-bar {
         height: 100%;
+        color: white;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        overflow: hidden;
 
         &--pending {
           background-color: $pending;
