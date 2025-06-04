@@ -166,14 +166,21 @@ function changeStatus(string: IString, status: TStatus) {
 }
 
 async function saveString(string: IString, fakeString: IString) {
-  const res = await $fetch('/api/saveString', {
-    method: "POST",
-    body: string
-  })
-
-  if (res.status !== 200) {
+  try {
+    await $fetch('/api/saveString', {
+      method: "POST",
+      body: string
+    })
+  } catch(e) {
     console.error('Não deu pra salvar essa string!!');
-    string = fakeString;
+    
+    const realString = xmlList.value.find(string => string._id === fakeString._id);
+    if (!realString) return;
+    
+    realString._id = fakeString._id;
+    realString.changedNow = false;
+    realString.status = fakeString.status;
+    realString.translated = fakeString.translated;
   }
 }
 
@@ -209,7 +216,7 @@ function filteredList() {
   const filtered = xmlList.value.filter(string => string.original.includes(searchTerm.value));
   totalPages = filtered.length / 1000 + 1
   totalPages = Math.floor(totalPages);
-  
+
   return filtered.slice((page.value - 1) * 1000, page.value * 1000)
 }
 
