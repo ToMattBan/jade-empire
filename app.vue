@@ -13,8 +13,8 @@
 
     <div class="list-container list-container--title">
       <div class="list-container--row">
-        <h2>ORIGINAL</h2>
-        <h2>TRADUZIDO</h2>
+        <h2 @click="sortList('original')">ORIGINAL <span v-if="sortBy === 'original'">*</span></h2>
+        <h2 @click="sortList('traduzido')">TRADUZIDO <span v-if="sortBy === 'traduzido'">*</span></h2>
       </div>
     </div>
   </header>
@@ -107,6 +107,7 @@ const translatedPercentage = ref<number>(0);
 const isLoading = ref<boolean>(false);
 const page = ref<number>(1);
 const searchTerm = ref<string>('');
+const sortBy = ref<'original' | 'traduzido' | null>(null);
 const xmlList = ref<IString[]>([]);
 const userAuth = ref<IUser>({ name: '', email: '', token: '' });
 
@@ -171,12 +172,12 @@ async function saveString(string: IString, fakeString: IString) {
       method: "POST",
       body: string
     })
-  } catch(e) {
+  } catch (e) {
     console.error('Não deu pra salvar essa string!!');
-    
+
     const realString = xmlList.value.find(string => string._id === fakeString._id);
     if (!realString) return;
-    
+
     realString._id = fakeString._id;
     realString.changedNow = false;
     realString.status = fakeString.status;
@@ -212,10 +213,25 @@ async function downloadXML() {
   setTimeout(function () { URL.revokeObjectURL(a.href); }, 1500);
 }
 
+function sortList(type: 'original' | 'traduzido') {
+  if (sortBy.value === type) sortBy.value = null
+  else sortBy.value = type;
+}
+
 function filteredList() {
-  const filtered = xmlList.value.filter(string => string.original.includes(searchTerm.value));
+  let filtered = xmlList.value.filter(string => string.original.includes(searchTerm.value));
+
+  if (sortBy.value) {
+    filtered = filtered.sort((a, b) => {
+      if (sortBy.value === 'original') return a.original.localeCompare(b.original)
+      return a.translated.localeCompare(b.translated)
+    })
+  }
+
   totalPages = filtered.length / 1000 + 1
   totalPages = Math.floor(totalPages);
+
+  window.scrollTo(0, 0);
 
   return filtered.slice((page.value - 1) * 1000, page.value * 1000)
 }
@@ -344,6 +360,7 @@ header {
 
     h2 {
       margin: 8px;
+      cursor: pointer;
     }
 
     textarea:disabled {
