@@ -1,7 +1,7 @@
 <template>
   <header>
     <div class="header">
-      <!-- <button class="btn--config" @click="openTokenModal">CONFIGS</button> -->
+      <button class="btn--config" @click="downloadXML">DOWNLOAD</button>
       <h1>PROJETO - JADE EMPIRE BR</h1>
       <!-- <button class="btn--save" @click="">SALVAR</button> -->
     </div>
@@ -80,7 +80,7 @@ const revisingPercentage = ref<number>(0);
 const translatedPercentage = ref<number>(0);
 
 const isLoading = ref<boolean>(false);
-const xmlList = ref<IString[]>();
+const xmlList = ref<IString[]>([]);
 const userAuth = ref<IUser>({ name: '', email: '', token: '' });
 
 onMounted(async () => {
@@ -106,8 +106,8 @@ async function getPercentageCount() {
 async function getXML() {
   isLoading.value = true;
 
-  const allStrings = await $fetch(`/api/getStrings`, { method: "GET" });
-  //const allStrings = await $fetch(`/api/mockXml`, { method: "GET" });
+  //const allStrings = await $fetch(`/api/getStrings`, { method: "GET" });
+  const allStrings = await $fetch(`/api/mockXml`, { method: "GET" });
   if (!allStrings) return;
 
   xmlList.value = allStrings.map(string => {
@@ -127,7 +127,7 @@ function changeStatus(string: IString, status: TStatus) {
     if (string.newTranslation === string.translated) return;
     string.changedNow = true;
   }
-  
+
   string.translated = string.newTranslation || string.translated;
   string.status = status;
   saveString(string, fakeString);
@@ -143,6 +143,34 @@ async function saveString(string: IString, fakeString: IString) {
     console.error('Não deu pra salvar essa string!!');
     string = fakeString;
   }
+}
+
+async function downloadXML() {
+  await getXML();
+
+  const xmlTranslated = xmlList.value.map(string => {
+    let stringAttrs = `id="${string._id}"`;
+    if (string.soundid) stringAttrs = stringAttrs + `soundid="${string.soundid}"`;
+
+    return `<string ${stringAttrs}>${string.translated || string.original}</string>`
+  })
+
+  const joinedXml = xmlTranslated.join('\n').trim();
+  const totalXml =
+    '<?xml version="1.0" encoding="utf-8" standalone="yes"?>\n' +
+    '<tlk language="0">\n' + joinedXml + '\n</tlk>';
+
+  const blob = new Blob([totalXml], { type: 'text/xml' });
+
+  const a = document.createElement('a');
+  a.download = 'translatedlDialog.xml';
+  a.href = URL.createObjectURL(blob);
+  a.dataset.downloadurl = ['text/xml', a.download, a.href].join(':');
+  a.style.display = 'none';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(function() { URL.revokeObjectURL(a.href); }, 1500);
 }
 
 async function openTokenModal() {
