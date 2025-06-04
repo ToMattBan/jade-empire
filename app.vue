@@ -219,7 +219,7 @@ function sortList(type: 'original' | 'traduzido') {
 }
 
 function filteredList() {
-  let filtered = xmlList.value.filter(string => string.original.toLowerCase().includes(searchTerm.value.toLowerCase()));
+  let filtered = xmlList.value.filter(string => string.original && string.original.toLowerCase().includes(searchTerm.value.toLowerCase()));
 
   if (sortBy.value) {
     filtered = filtered.sort((a, b) => {
