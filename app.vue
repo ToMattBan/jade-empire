@@ -19,8 +19,8 @@
     <span>Isso pode levar um tempinho...</span>
   </div>
 
-  <div>
-    <div v-for="string of xmlList" class="list-container list-container--list"
+  <div class="content">
+    <div v-for="string of pagination()" class="list-container list-container--list"
       :class="string.changedNow ? 'changedNow' : string.status">
       <div class="list-container--row">
         <textarea disabled>{{ string.original }}</textarea>
@@ -33,15 +33,6 @@
       </div>
     </div>
   </div>
-
-  <footer>
-    <div class="progress-bar--container">
-      <div class="progress-bar progress-bar--pending" :style="{ 'width': `${pendingPercentage}%` }"></div>
-      <div class="progress-bar progress-bar--revising" :style="{ 'width': `${revisingPercentage}%` }"></div>
-      <div class="progress-bar progress-bar--translated" :style="{ 'width': `${translatedPercentage}%` }"></div>
-    </div>
-    <button class="next-button" title="Próxima linha" @click="nextString">↓</button>
-  </footer>
 
   <AsyncModal ref="tokenModal">
     <div class="githubForm">
@@ -64,6 +55,22 @@
       </div>
     </div>
   </AsyncModal>
+
+  <footer>
+    <div class="pagination">
+      <button class="next-page" @click="page = page - 1" :class="{ 'show-btn': page > 1 }">PÁGINA ANTERIOR</button>
+      <span>Página {{ page }} de {{ totalPages }}</span>
+      <button class="prev-page" @click="page = page + 1" :class="{ 'show-btn': page < totalPages }">PRÓXIMA PÁGINA</button>
+    </div>
+    <div class="bottom-footer">
+      <div class="progress-bar--container">
+        <div class="progress-bar progress-bar--pending" :style="{ 'width': `${pendingPercentage}%` }"></div>
+        <div class="progress-bar progress-bar--revising" :style="{ 'width': `${revisingPercentage}%` }"></div>
+        <div class="progress-bar progress-bar--translated" :style="{ 'width': `${translatedPercentage}%` }"></div>
+      </div>
+      <button class="next-button" title="Próxima linha" @click="nextString">↓</button>
+    </div>
+  </footer>
 </template>
 
 <script setup lang="ts">
@@ -79,9 +86,12 @@ const pendingPercentage = ref<number>(0);
 const revisingPercentage = ref<number>(0);
 const translatedPercentage = ref<number>(0);
 
+const page = ref<number>(1);
 const isLoading = ref<boolean>(false);
 const xmlList = ref<IString[]>([]);
 const userAuth = ref<IUser>({ name: '', email: '', token: '' });
+
+let totalPages = 1;
 
 onMounted(async () => {
   userAuth.value.token = sessionStorage.getItem('token') ?? '';
@@ -116,6 +126,9 @@ async function getXML() {
       newTranslation: string.translated
     }
   });
+
+  totalPages = xmlList.value.length / 1000 + 1
+  totalPages = Math.floor(totalPages);
 
   isLoading.value = false;
 }
@@ -170,7 +183,11 @@ async function downloadXML() {
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
-  setTimeout(function() { URL.revokeObjectURL(a.href); }, 1500);
+  setTimeout(function () { URL.revokeObjectURL(a.href); }, 1500);
+}
+
+function pagination() {
+  return xmlList.value.slice((page.value - 1) * 1000, page.value * 1000)
 }
 
 async function openTokenModal() {
@@ -266,6 +283,10 @@ header {
   align-items: center;
 }
 
+.content {
+  padding-bottom: 85px;
+}
+
 .list-container {
   padding-top: 4px;
   padding-bottom: 4px;
@@ -319,40 +340,64 @@ header {
 footer {
   position: fixed;
   inset: auto 0 0 auto;
-  height: 60px;
-  display: flex;
   width: 100%;
 
-  .progress-bar--container {
-    width: 100%;
+  .pagination {
     display: flex;
+    justify-content: space-between;
+    background-color: white;
+    padding: 4px;
+    border-top: solid 3px black;
 
-    .progress-bar {
-      height: 100%;
+    button {
+      opacity: 0;
+      background-color: $other;
+      color: white;
+      border: none;
+      border-radius: 4px;
 
-      &--pending {
-        background-color: $pending;
-      }
-
-      &--revising {
-        background-color: $revising;
-      }
-
-      &--translated {
-        background-color: $translated;
+      &.show-btn {
+        opacity: 1;
       }
     }
   }
 
-  .next-button {
-    aspect-ratio: 1/1;
-    height: 100%;
-    color: white;
-    font-size: 20px;
-    background-color: $other;
-    border: solid 3px black;
-    border-width: 3px 0 0 3px;
-    cursor: pointer;
+  .bottom-footer {
+    height: 60px;
+    display: flex;
+    width: 100%;
+
+    .progress-bar--container {
+      width: 100%;
+      display: flex;
+
+      .progress-bar {
+        height: 100%;
+
+        &--pending {
+          background-color: $pending;
+        }
+
+        &--revising {
+          background-color: $revising;
+        }
+
+        &--translated {
+          background-color: $translated;
+        }
+      }
+    }
+
+    .next-button {
+      aspect-ratio: 1/1;
+      height: 100%;
+      color: white;
+      font-size: 20px;
+      background-color: $other;
+      border: solid 3px black;
+      border-width: 3px 0 0 3px;
+      cursor: pointer;
+    }
   }
 }
 
