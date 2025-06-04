@@ -231,8 +231,6 @@ function filteredList() {
   totalPages = filtered.length / 1000 + 1
   totalPages = Math.floor(totalPages);
 
-  window.scrollTo(0, 0);
-
   return filtered.slice((page.value - 1) * 1000, page.value * 1000)
 }
 
