@@ -1,6 +1,5 @@
-import { ObjectId } from "mongodb";
 import { IString } from "~/interfaces/interfaces";
-import { openDb } from "~/utils/db";
+import { closeClient, openDb } from "~/utils/db";
 
 export default defineEventHandler(async (event) => {
   const body: IString = await readBody(event)
@@ -28,6 +27,8 @@ export default defineEventHandler(async (event) => {
   } catch (e) {
     console.error(e);
     response = e;
+  } finally {
+    closeClient();
   }
 
   if (!success) throw createError({

@@ -1,5 +1,5 @@
 import { IString } from "~/interfaces/interfaces";
-import { openDb } from "~/utils/db";
+import { closeClient, openDb } from "~/utils/db";
 
 export default defineEventHandler(async (event) => {
   let allStrings: IString[] = [];
@@ -15,6 +15,8 @@ export default defineEventHandler(async (event) => {
     }
   } catch (e) {
     console.error(e);
+  } finally {
+    closeClient()
   }
 
   return allStrings;
