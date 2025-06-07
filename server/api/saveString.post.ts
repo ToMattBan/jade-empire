@@ -3,7 +3,6 @@ import { closeClient, openDb } from "~/utils/db";
 
 export default defineEventHandler(async (event) => {
   const body: IString = await readBody(event)
-  console.log("🚀 ~ defineEventHandler ~ body:", body)
 
   let success = false;
   let response;
@@ -28,7 +27,7 @@ export default defineEventHandler(async (event) => {
     console.error(e);
     response = e;
   } finally {
-    closeClient();
+    await closeClient();
   }
 
   if (!success) throw createError({

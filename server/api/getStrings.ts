@@ -16,7 +16,7 @@ export default defineEventHandler(async (event) => {
   } catch (e) {
     console.error(e);
   } finally {
-    closeClient()
+    await closeClient();
   }
 
   return allStrings;

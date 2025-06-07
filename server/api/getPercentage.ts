@@ -30,8 +30,6 @@ export default defineEventHandler(async (event) => {
     percentage.pending = getPercentage(pending, totalRows);
   } catch (e) {
     console.error(e);
-  } finally {
-    closeClient()
   }
 
   return percentage;
