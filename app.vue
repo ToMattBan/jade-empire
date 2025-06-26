@@ -111,6 +111,7 @@ const sortBy = ref<'original' | 'traduzido' | null>(null);
 const xmlList = ref<IString[]>([]);
 const userAuth = ref<IUser>({ name: '', email: '', token: '' });
 
+let paginationSize = window.innerWidth > 700 ? 1000 : 500;
 let totalPages = 1;
 
 onMounted(async () => {
@@ -147,7 +148,7 @@ async function getXML() {
     }
   });
 
-  totalPages = xmlList.value.length / 1000 + 1
+  totalPages = xmlList.value.length / paginationSize + 1
   totalPages = Math.floor(totalPages);
 
   isLoading.value = false;
@@ -228,10 +229,10 @@ function filteredList() {
     })
   }
 
-  totalPages = filtered.length / 1000 + 1
+  totalPages = filtered.length / paginationSize + 1
   totalPages = Math.floor(totalPages);
 
-  return filtered.slice((page.value - 1) * 1000, page.value * 1000)
+  return filtered.slice((page.value - 1) * paginationSize, page.value * paginationSize)
 }
 
 async function openTokenModal() {
