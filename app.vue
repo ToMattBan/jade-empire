@@ -111,10 +111,12 @@ const sortBy = ref<'original' | 'traduzido' | null>(null);
 const xmlList = ref<IString[]>([]);
 const userAuth = ref<IUser>({ name: '', email: '', token: '' });
 
-let paginationSize = window.innerWidth > 700 ? 1000 : 500;
 let totalPages = 1;
+let paginationSize = 1000;
 
 onMounted(async () => {
+  if (window && window.innerWidth <= 700) paginationSize = 500;
+
   userAuth.value.token = sessionStorage.getItem('token') ?? '';
   userAuth.value.email = sessionStorage.getItem('email') ?? '';
   userAuth.value.name = sessionStorage.getItem('name') ?? '';
