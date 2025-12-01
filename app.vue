@@ -8,7 +8,26 @@
 
     <div class="search">
       <span>BUSCA: </span>
-      <input v-model="searchTerm" />
+      <input v-model="searchTerm" class="search-input" />
+      <div class="filter-container">
+        <button class="filter-button" title="Abrir filtro" @click="isFilterOpen = !isFilterOpen">Filtro</button>
+        <div class="filter-box" :class="{'isOpen': isFilterOpen}">
+          <ul>
+            <li>
+              <input type="checkbox" v-model="filters.translated" id="translated" @change="" />
+              <label for="translated">Mostrar Traduzidas</label>
+            </li>
+            <li>
+              <input type="checkbox" v-model="filters.revising" id="revising" @change="" />
+              <label for="revising">Mostrar Em Revisão</label>
+            </li>
+            <li>
+              <input type="checkbox" v-model="filters.pending" id="pending" @change="" />
+              <label for="pending">Mostrar Pendentes</label>
+            </li>
+          </ul>
+        </div>
+      </div>
     </div>
 
     <div class="list-container list-container--title">
@@ -63,10 +82,9 @@
 
   <footer>
     <div class="pagination">
-      <button class="next-page" @click="page = page - 1" :class="{ 'show-btn': page > 1 }">PÁGINA ANTERIOR</button>
+      <button class="next-page" @click="page = page - 1" :class="{ 'show-btn': true }">PÁGINA ANTERIOR</button>
       <span>Página {{ page }} de {{ totalPages }}</span>
-      <button class="prev-page" @click="page = page + 1" :class="{ 'show-btn': page < totalPages }">PRÓXIMA
-        PÁGINA</button>
+      <button class="prev-page" @click="page = page + 1" :class="{ 'show-btn': true }">PRÓXIMA PÁGINA</button>
     </div>
 
     <div class="bottom-footer">
@@ -106,8 +124,17 @@ const translatedPercentage = ref<number>(0);
 
 const isLoading = ref<boolean>(false);
 const page = ref<number>(1);
+
 const searchTerm = ref<string>('');
 const sortBy = ref<'original' | 'traduzido' | null>(null);
+const isFilterOpen = ref<boolean>(false);
+const filters = reactive<{[K in TStatus]: boolean}>({
+  changedNow: true,
+  pending: true,
+  revising: true,
+  translated: true
+});
+
 const xmlList = ref<IString[]>([]);
 const userAuth = ref<IUser>({ name: '', email: '', token: '' });
 
@@ -139,8 +166,8 @@ async function getPercentageCount() {
 async function getXML() {
   isLoading.value = true;
 
-  const allStrings = await $fetch(`/api/getStrings`, { method: "GET" });
-  //const allStrings = await $fetch(`/api/mockXml`, { method: "GET" });
+  //const allStrings = await $fetch(`/api/getStrings`, { method: "GET" });
+  const allStrings = await $fetch(`/api/mockXml`, { method: "GET" });
   if (!allStrings) return;
 
   xmlList.value = allStrings.map(string => {
@@ -222,7 +249,16 @@ function sortList(type: 'original' | 'traduzido') {
 }
 
 function filteredList() {
-  let filtered = xmlList.value.filter(string => string.original && string.original.toLowerCase().includes(searchTerm.value.toLowerCase()));
+  let filtered = xmlList.value;
+  
+  if (searchTerm.value) {
+    filtered = xmlList.value.filter(string => string.original && string.original.toLowerCase().includes(searchTerm.value.toLowerCase()));
+  }
+
+  const statusNotToShow = (Object.keys(filters) as TStatus[]).filter(key => filters[key] === false);
+  if (statusNotToShow.length > 0) {
+    filtered = filtered.filter(string => !statusNotToShow.includes(string.status));
+  }
 
   if (sortBy.value) {
     filtered = filtered.sort((a, b) => {
@@ -315,10 +351,52 @@ header {
     align-items: center;
     gap: 8px;
 
-    input {
+    .search-input {
       border-radius: 4px;
       width: 100%;
       padding: 4px 8px;
+    }
+
+    .filter-container {
+      position: relative;
+
+      button {
+        background-color: $other;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        padding: 5px 10px;
+        text-transform: uppercase;
+      }
+
+      .filter-box {
+        position: absolute;
+        right: 0;
+        transform: translateY(5px);
+        width: 200px;
+        background-color: white;
+        border: solid 3px black;
+        border-radius: 4px;
+        display: none;
+
+        &.isOpen {
+          display: block;
+        }
+
+        ul {
+          margin: 0;
+          padding: 8px 4px;
+          list-style: none;
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+
+          label {
+            margin-left: 4px;
+          }
+        }
+      }
     }
   }
 }
