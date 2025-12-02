@@ -121,8 +121,10 @@ let paginationSize = 1000;
 onMounted(async () => {
   if (window && window.innerWidth <= 700) paginationSize = 500;
 
-  getPercentageCount();
-  await getXML();
+  await Promise.all([
+    getPercentageCount(),
+    getXML()
+  ])
 })
 
 async function getPercentageCount() {
@@ -140,7 +142,6 @@ async function getXML() {
   isLoading.value = true;
 
   const allStrings = await $fetch(`/api/getStrings`, { method: "GET" });
-  //const allStrings = await $fetch(`/api/mockXml`, { method: "GET" });
   if (!allStrings) return;
 
   xmlList.value = allStrings.map(string => {
