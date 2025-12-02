@@ -58,28 +58,6 @@
     </div>
   </div>
 
-  <AsyncModal ref="tokenModal">
-    <div class="githubForm">
-      <h2>Preencha os dados abaixo</h2>
-      <p>Faça com calma, não vou validar nenhum dado!</p>
-
-      <div class="data-container">
-        <label for="username">Username</label>
-        <input name="username" id="username" v-model="userAuth.name" />
-      </div>
-
-      <div class="data-container">
-        <label for="email">Email</label>
-        <input name="email" id="email" type="email" v-model="userAuth.email" />
-      </div>
-
-      <div class="data-container">
-        <label for="token">Github Token</label>
-        <input name="token" id="token" v-model="userAuth.token" />
-      </div>
-    </div>
-  </AsyncModal>
-
   <footer>
     <div class="pagination">
       <button class="next-page" @click="page = page - 1" :class="{ 'show-btn': true }">PÁGINA ANTERIOR</button>
@@ -136,17 +114,12 @@ const filters = reactive<{[K in TStatus]: boolean}>({
 });
 
 const xmlList = ref<IString[]>([]);
-const userAuth = ref<IUser>({ name: '', email: '', token: '' });
 
 let totalPages = 1;
 let paginationSize = 1000;
 
 onMounted(async () => {
   if (window && window.innerWidth <= 700) paginationSize = 500;
-
-  userAuth.value.token = sessionStorage.getItem('token') ?? '';
-  userAuth.value.email = sessionStorage.getItem('email') ?? '';
-  userAuth.value.name = sessionStorage.getItem('name') ?? '';
 
   getPercentageCount();
   await getXML();
@@ -271,14 +244,6 @@ function filteredList() {
   totalPages = Math.floor(totalPages);
 
   return filtered.slice((page.value - 1) * paginationSize, page.value * paginationSize)
-}
-
-async function openTokenModal() {
-  await tokenModal.value.open().then(() => {
-    sessionStorage.setItem('token', userAuth.value.token);
-    sessionStorage.setItem('email', userAuth.value.email);
-    sessionStorage.setItem('name', userAuth.value.name);
-  });
 }
 
 function nextString() {
