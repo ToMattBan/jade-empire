@@ -44,16 +44,20 @@
   </div>
 
   <div class="content">
-    <div v-for="string of filteredList()" class="list-container list-container--list"
-      :class="string.changedNow ? 'changedNow' : string.status">
+    <div v-for="string of filteredList()" class="list-container list-container--list" :class="string.changedNow ? 'changedNow' : string.status">
       <div class="list-container--row">
-        <textarea disabled>{{ string.original }}</textarea>
-        <textarea v-model="string.newTranslation" @blur="changeStatus(string, 'revising')"></textarea>
+        <div :data-replicated-value="string.original">
+          <textarea disabled>{{ string.original }}</textarea>
+        </div>
+
+        <div :data-replicated-value="string.newTranslation">
+          <textarea v-model="string.newTranslation" @input="textareaGrow" @blur="changeStatus(string, 'revising')"></textarea>
+        </div>
       </div>
+
       <div class="checkTranslated" v-if="string.status === 'revising' && !string.changedNow">
         <label :for="`checkTranslated-${string._id}`">Marcar como traduzido</label>
-        <input :name="`checkTranslated-${string._id}`" :id="`checkTranslated-${string._id}`" type="checkbox"
-          @change="changeStatus(string, 'translated')" />
+        <input :name="`checkTranslated-${string._id}`" :id="`checkTranslated-${string._id}`" type="checkbox" @change="changeStatus(string, 'translated')" />
       </div>
     </div>
   </div>
@@ -155,6 +159,14 @@ async function getXML() {
   totalPages = Math.floor(totalPages);
 
   isLoading.value = false;
+}
+
+function textareaGrow(e: Event) {
+  const target = e.target as HTMLTextAreaElement;
+
+  const targetParent = target.parentNode as HTMLElement;
+
+  targetParent.setAttribute('data-replicated-value', target.value);
 }
 
 function changeStatus(string: IString, status: TStatus) {
@@ -397,19 +409,48 @@ header {
   .list-container--row {
     display: flex;
     gap: 4px;
+    padding: 0 4px;
     text-align: center;
 
-    >* {
+    > div {
       flex: 1;
+      display: grid;
+
+      &::after {
+        content: attr(data-replicated-value) " ";
+        white-space: pre-wrap;
+        visibility: hidden;
+      }
+
+      textarea {
+        resize: none;
+        overflow: hidden;
+
+        &:disabled {
+          color: rgb(0, 0, 0);
+        }
+      }
+
+      &::after, textarea {
+        border: 1px solid black;
+        padding: 0.5rem;
+        font: inherit;
+        grid-area: 1 / 1 / 2 / 2;
+      }
+    }
+
+    button {
+      display: flex;
+      align-items: center;
+
+      img {
+        height: 15px;
+      }
     }
 
     h2 {
       margin: 8px;
       cursor: pointer;
-    }
-
-    textarea:disabled {
-      color: rgb(0, 0, 0);
     }
   }
 
