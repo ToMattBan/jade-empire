@@ -51,7 +51,7 @@
         </div>
 
         <div :data-replicated-value="string.newTranslation">
-          <textarea v-model="string.newTranslation" @input="textareaGrow" @blur="changeStatus(string, 'revising')"></textarea>
+          <textarea v-model="string.newTranslation" @blur="changeStatus(string, 'revising')"></textarea>
         </div>
       </div>
 
@@ -159,14 +159,6 @@ async function getXML() {
   totalPages = Math.floor(totalPages);
 
   isLoading.value = false;
-}
-
-function textareaGrow(e: Event) {
-  const target = e.target as HTMLTextAreaElement;
-
-  const targetParent = target.parentNode as HTMLElement;
-
-  targetParent.setAttribute('data-replicated-value', target.value);
 }
 
 function changeStatus(string: IString, status: TStatus) {
