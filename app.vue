@@ -3,7 +3,6 @@
     <div class="header">
       <button class="btn--config" @click="downloadXML">DOWNLOAD</button>
       <h1>PROJETO - JADE EMPIRE BR</h1>
-      <!-- <button class="btn--save" @click="">SALVAR</button> -->
     </div>
 
     <div class="search">
@@ -14,15 +13,15 @@
         <div class="filter-box" :class="{'isOpen': isFilterOpen}">
           <ul>
             <li>
-              <input type="checkbox" v-model="filters.translated" id="translated" @change="" />
+              <input type="checkbox" v-model="filters.translated" id="translated" />
               <label for="translated">Mostrar Traduzidas</label>
             </li>
             <li>
-              <input type="checkbox" v-model="filters.revising" id="revising" @change="" />
+              <input type="checkbox" v-model="filters.revising" id="revising" />
               <label for="revising">Mostrar Em Revisão</label>
             </li>
             <li>
-              <input type="checkbox" v-model="filters.pending" id="pending" @change="" />
+              <input type="checkbox" v-model="filters.pending" id="pending" />
               <label for="pending">Mostrar Pendentes</label>
             </li>
           </ul>
@@ -44,7 +43,7 @@
   </div>
 
   <div class="content">
-    <div v-for="string of filteredList()" class="list-container list-container--list" :class="string.changedNow ? 'changedNow' : string.status">
+    <div v-for="string of filteredList" class="list-container list-container--list" :class="string.changedNow ? 'changedNow' : string.status">
       <div class="list-container--row">
         <div :data-replicated-value="string.original">
           <textarea disabled>{{ string.original }}</textarea>
@@ -57,16 +56,16 @@
 
       <div class="checkTranslated" v-if="string.status === 'revising' && !string.changedNow">
         <label :for="`checkTranslated-${string._id}`">Marcar como traduzido</label>
-        <input :name="`checkTranslated-${string._id}`" :id="`checkTranslated-${string._id}`" type="checkbox" @change="changeStatus(string, 'translated')" />
+        <input :name="`checkTranslated-${string._id}`" :id="`checkTranslated-${string._id}`" type="checkbox" v-model="string.translated" @change="changeStatus(string, 'translated')" />
       </div>
     </div>
   </div>
 
   <footer>
     <div class="pagination">
-      <button class="next-page" @click="page = page - 1" :class="{ 'show-btn': true }">PÁGINA ANTERIOR</button>
+      <button class="next-page" @click="page = page - 1" :class="{ 'show-btn': page > 1 }">PÁGINA ANTERIOR</button>
       <span>Página {{ page }} de {{ totalPages }}</span>
-      <button class="prev-page" @click="page = page + 1" :class="{ 'show-btn': true }">PRÓXIMA PÁGINA</button>
+      <button class="prev-page" @click="page = page + 1" :class="{ 'show-btn': page < totalPages }">PRÓXIMA PÁGINA</button>
     </div>
 
     <div class="bottom-footer">
@@ -92,13 +91,11 @@
 </template>
 
 <script setup lang="ts">
-import type { IString, IUser, TStatus } from './interfaces/interfaces';
+import type { IString, TStatus } from './interfaces/interfaces';
 
 useHead({
   title: "PROJETO - JADE EMPIRE BR"
 })
-
-const tokenModal = ref();
 
 const pendingPercentage = ref<number>(0);
 const revisingPercentage = ref<number>(0);
@@ -226,9 +223,9 @@ function sortList(type: 'original' | 'traduzido') {
   else sortBy.value = type;
 }
 
-function filteredList() {
+const filteredList = computed(() => {
   let filtered = xmlList.value;
-  
+
   if (searchTerm.value) {
     filtered = xmlList.value.filter(string => string.original && string.original.toLowerCase().includes(searchTerm.value.toLowerCase()));
   }
@@ -249,7 +246,7 @@ function filteredList() {
   totalPages = Math.floor(totalPages);
 
   return filtered.slice((page.value - 1) * paginationSize, page.value * paginationSize)
-}
+})
 
 function nextString() {
   let nextString = document.querySelector('.revising');
