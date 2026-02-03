@@ -56,7 +56,7 @@
 
       <div class="checkTranslated" v-if="string.status === 'revising' && !string.changedNow">
         <label :for="`checkTranslated-${string._id}`">Marcar como traduzido</label>
-        <input :name="`checkTranslated-${string._id}`" :id="`checkTranslated-${string._id}`" type="checkbox" v-model="string.translated" @change="changeStatus(string, 'translated')" />
+        <input :name="`checkTranslated-${string._id}`" :id="`checkTranslated-${string._id}`" type="checkbox" :checked="false" @change="changeStatus(string, 'translated')" />
       </div>
     </div>
   </div>
@@ -397,6 +397,7 @@ header {
 
   .list-container--row {
     display: flex;
+    justify-content: space-around;
     gap: 4px;
     padding: 0 4px;
     text-align: center;
