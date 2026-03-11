@@ -10,14 +10,14 @@
     "postinstall": "nuxt prepare"
   },
   "dependencies": {
-    "nuxt": "^3.21.0",
+    "nuxt": "^3.21.1",
     "octokit": "^5.0.5",
-    "vue": "^3.5.27",
+    "vue": "^3.5.30",
     "vue-router": "^4.6.4"
   },
   "packageManager": "pnpm@9.15.4+sha512.b2dc20e2fc72b3e18848459b37359a32064663e5627a51e4c74b2c29dd8e8e0491483c3abb40789cfd578bf362fb6ba8261b05f0387d76792ed6e23ea3b1b6a0",
   "devDependencies": {
     "mongodb": "^6.21.0",
-    "sass": "^1.97.3"
+    "sass": "^1.98.0"
   }
 }
