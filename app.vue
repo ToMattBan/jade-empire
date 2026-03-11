@@ -360,6 +360,7 @@ header {
         transform: translateY(5px);
         width: 200px;
         background-color: white;
+        color: #000;
         border: solid 3px black;
         border-radius: 4px;
         display: none;
