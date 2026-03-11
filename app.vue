@@ -10,7 +10,7 @@
       <input v-model="searchTerm" class="search-input" />
       <div class="filter-container">
         <button class="filter-button" title="Abrir filtro" @click="isFilterOpen = !isFilterOpen">Filtro</button>
-        <div class="filter-box" :class="{'isOpen': isFilterOpen}">
+        <div class="filter-box" :class="{ 'isOpen': isFilterOpen }">
           <ul>
             <li>
               <input type="checkbox" v-model="filters.translated" id="translated" />
@@ -107,7 +107,7 @@ const page = ref<number>(1);
 const searchTerm = ref<string>('');
 const sortBy = ref<'original' | 'traduzido' | null>(null);
 const isFilterOpen = ref<boolean>(false);
-const filters = reactive<{[K in TStatus]: boolean}>({
+const filters = reactive<{ [K in TStatus]: boolean }>({
   changedNow: true,
   pending: true,
   revising: true,
@@ -256,21 +256,38 @@ function nextString() {
 }
 </script>
 
-<style lang="scss" scoped>
+<style lang="scss">
 // SETTING COLORS VARS
 $translated: #4caf50;
 $revising: #eaea13;
 $pending: #f44336;
 $other: #14468b;
 
+// Theme colors
+$bgColor-light: #efedea;
+$bgColor-dark: #1c1b22;
+$textColor-light: #000000;
+$textColor-dark: #ffffff;
+
+:root {
+  color-scheme: light dark;
+}
+
 * {
   scroll-behavior: smooth;
+}
+
+html,
+body,
+header,
+footer .pagination {
+  background-color: light-dark($bgColor-light, $bgColor-dark);
+  color: light-dark($textColor-light, $textColor-dark)
 }
 
 header {
   position: sticky;
   top: 0px;
-  background-color: white;
   border-bottom: solid 3px black;
 
   .header {
@@ -402,7 +419,7 @@ header {
     padding: 0 4px;
     text-align: center;
 
-    > div {
+    >div {
       flex: 1;
       display: grid;
 
@@ -415,13 +432,16 @@ header {
       textarea {
         resize: none;
         overflow: hidden;
+        background-color: light-dark(#ffffff, rgba($bgColor-dark, 0.5));
 
         &:disabled {
-          color: rgb(0, 0, 0);
+          color: black;
+          background-color: rgba(255, 255, 255, 0.5);
         }
       }
 
-      &::after, textarea {
+      &::after,
+      textarea {
         border: 1px solid black;
         padding: 0.5rem;
         font: inherit;
@@ -451,9 +471,9 @@ header {
 
     * {
       cursor: pointer;
+      color: #000;
     }
   }
-
 
   &.translated {
     background-color: $translated;
@@ -480,7 +500,6 @@ footer {
   .pagination {
     display: flex;
     justify-content: space-between;
-    background-color: white;
     padding: 4px;
     border-top: solid 3px black;
 
@@ -510,6 +529,12 @@ footer {
       .progress-bar {
         height: 100%;
         color: white;
+        text-shadow:
+          -1px -1px 0 #000,
+          1px -1px 0 #000,
+          -1px 1px 0 #000,
+          1px 1px 0 #000;
+
         display: flex;
         justify-content: center;
         align-items: center;
@@ -538,27 +563,6 @@ footer {
       border: solid 3px black;
       border-width: 3px 0 0 3px;
       cursor: pointer;
-    }
-  }
-}
-
-.githubForm {
-  margin-bottom: 24px;
-
-  h2 {
-    margin: 0;
-  }
-
-  .data-container {
-    display: flex;
-    flex-direction: column;
-    margin: 12px 0;
-
-    input {
-      padding: 6px 8px;
-      font-size: 12px;
-      font-family: monospace;
-      border-radius: 4px;
     }
   }
 }
