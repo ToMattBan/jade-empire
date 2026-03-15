@@ -227,7 +227,10 @@ const filteredList = computed(() => {
   let filtered = xmlList.value;
 
   if (searchTerm.value) {
-    filtered = xmlList.value.filter(string => string.original && string.original.toLowerCase().includes(searchTerm.value.toLowerCase()));
+    filtered = xmlList.value.filter(string => 
+      (string.original && string.original.toLowerCase().includes(searchTerm.value.toLowerCase())) ||
+      (string.translated && string.translated.toLowerCase().includes(searchTerm.value.toLowerCase()))
+    );
   }
 
   const statusNotToShow = (Object.keys(filters) as TStatus[]).filter(key => filters[key] === false);
