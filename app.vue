@@ -195,7 +195,7 @@ async function downloadXML() {
 
   const xmlTranslated = xmlList.value.map(string => {
     let stringAttrs = `id="${string._id}"`;
-    if (string.soundid) stringAttrs = stringAttrs + `soundid="${string.soundid}"`;
+    if (string.soundId) stringAttrs = stringAttrs + ` soundid="${string.soundId}"`;
 
     return `<string ${stringAttrs}>${string.translated || string.original}</string>`
   })

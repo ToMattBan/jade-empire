@@ -8,7 +8,7 @@ export type TStatus = 'revising' | 'translated' | 'pending' | 'changedNow';
 
 export interface IString {
   _id: string,
-  soundid: string,
+  soundId: string,
   status: TStatus,
   original: string,
   translated: string,
