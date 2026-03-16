@@ -1,4 +1,4 @@
-import { closeClient, openDb } from "~/utils/db";
+import { openDb } from "~/utils/db";
 
 function getPercentage(number: number, total: number): number {
   return number * 100 / total;
@@ -12,7 +12,7 @@ export default defineEventHandler(async (event) => {
   }
 
   /* percentage.revising = 0;
-  percentage.translated = 4.157530780907404;
+  percentage.translated = 4.157530780907404;Í
   percentage.pending = 95.84246921909259; */
 
   try {
