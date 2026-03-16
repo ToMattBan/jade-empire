@@ -14,4 +14,7 @@ export interface IString {
   translated: string,
   newTranslation?: string,
   changedNow?: boolean,
+
+  searchOriginal?: string,
+  searchTranslated?: string,
 }

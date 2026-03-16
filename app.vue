@@ -13,6 +13,10 @@
         <div class="filter-box" :class="{ 'isOpen': isFilterOpen }">
           <ul>
             <li>
+              <label>Linhas por página</label>
+              <input v-model.number="paginationSize" />
+            </li>
+            <li>
               <input type="checkbox" v-model="filters.translated" id="translated" />
               <label for="translated">Mostrar Traduzidas</label>
             </li>
@@ -32,7 +36,7 @@
     <div class="list-container list-container--title">
       <div class="list-container--row">
         <h2 @click="sortList('original')">ORIGINAL <span v-if="sortBy === 'original'">*</span></h2>
-        <h2 @click="sortList('traduzido')">TRADUZIDO <span v-if="sortBy === 'traduzido'">*</span></h2>
+        <h2 @click="sortList('translated')">TRADUZIDO <span v-if="sortBy === 'translated'">*</span></h2>
       </div>
     </div>
   </header>
@@ -97,6 +101,8 @@ useHead({
   title: "PROJETO - JADE EMPIRE BR"
 })
 
+let debounceTimer: ReturnType<typeof setTimeout>
+
 const pendingPercentage = ref<number>(0);
 const revisingPercentage = ref<number>(0);
 const translatedPercentage = ref<number>(0);
@@ -104,8 +110,10 @@ const translatedPercentage = ref<number>(0);
 const isLoading = ref<boolean>(false);
 const page = ref<number>(1);
 
-const searchTerm = ref<string>('');
-const sortBy = ref<'original' | 'traduzido' | null>(null);
+const searchTerm = ref('');
+const debouncedSearch = ref('');
+
+const sortBy = ref<'original' | 'translated' | null>(null);
 const isFilterOpen = ref<boolean>(false);
 const filters = reactive<{ [K in TStatus]: boolean }>({
   changedNow: true,
@@ -116,16 +124,34 @@ const filters = reactive<{ [K in TStatus]: boolean }>({
 
 const xmlList = ref<IString[]>([]);
 
-let totalPages = 1;
-let paginationSize = 1000;
+const totalPages = computed(() => {
+  const newTotal = Math.ceil(filteredListRaw.value.length / debouncedPagination.value)
+  if (newTotal < page.value) page.value = 1
+  return newTotal
+})
+const paginationSize = ref<number>(1000);
+const debouncedPagination = ref<number>(1000);
 
 onMounted(async () => {
-  if (window && window.innerWidth <= 700) paginationSize = 500;
+  if (window && window.innerWidth <= 700) debouncedPagination.value = 500;
 
-  await Promise.all([
-    getPercentageCount(),
-    getXML()
-  ])
+  await getPercentageCount();
+  await getXML();
+})
+
+watch(searchTerm, (value) => {
+  clearTimeout(debounceTimer)
+
+  debounceTimer = setTimeout(() => {
+    debouncedSearch.value = value.trim()
+  }, 300)
+})
+watch(paginationSize, (value) => {
+  clearTimeout(debounceTimer)
+
+  debounceTimer = setTimeout(() => {
+    debouncedPagination.value = value
+  }, 300)
 })
 
 async function getPercentageCount() {
@@ -148,12 +174,11 @@ async function getXML() {
   xmlList.value = allStrings.map(string => {
     return {
       ...string,
-      newTranslation: string.translated
+      newTranslation: string.translated,
+      searchOriginal: string.original.toLowerCase(),
+      searchTranslated: string.translated.toLowerCase()
     }
   });
-
-  totalPages = xmlList.value.length / paginationSize + 1
-  totalPages = Math.floor(totalPages);
 
   isLoading.value = false;
 }
@@ -168,6 +193,10 @@ function changeStatus(string: IString, status: TStatus) {
 
   string.translated = string.newTranslation || string.translated;
   string.status = status;
+
+  string.searchOriginal = string.original.toLowerCase();
+  string.searchTranslated = string.translated.toLowerCase();
+
   saveString(string, fakeString);
 }
 
@@ -218,42 +247,52 @@ async function downloadXML() {
   setTimeout(function () { URL.revokeObjectURL(a.href); }, 1500);
 }
 
-function sortList(type: 'original' | 'traduzido') {
+function sortList(type: 'original' | 'translated') {
   if (sortBy.value === type) sortBy.value = null
   else sortBy.value = type;
 }
 
-const filteredList = computed(() => {
+const filteredListRaw = computed(() => {
   let filtered = xmlList.value;
 
-  if (searchTerm.value) {
-    filtered = xmlList.value.filter(string => 
-      (string.original && string.original.toLowerCase().includes(searchTerm.value.toLowerCase())) ||
-      (string.translated && string.translated.toLowerCase().includes(searchTerm.value.toLowerCase()))
-    );
+  if (debouncedSearch.value) {
+    const term = debouncedSearch.value.toLowerCase()
+
+    filtered = filtered.filter(string =>
+      string.searchOriginal?.includes(term) ||
+      string.searchTranslated?.includes(term)
+    )
   }
 
-  const statusNotToShow = (Object.keys(filters) as TStatus[]).filter(key => filters[key] === false);
-  if (statusNotToShow.length > 0) {
+  const statusNotToShow = Object.entries(filters)
+    .filter(([, v]) => !v)
+    .map(([k]) => k)
+
+  if (statusNotToShow.length) {
     filtered = filtered.filter(string => !statusNotToShow.includes(string.status));
   }
 
   if (sortBy.value) {
-    filtered = filtered.sort((a, b) => {
+    filtered = [...filtered].sort((a, b) => {
       if (sortBy.value === 'original') return a.original.localeCompare(b.original)
+
       return a.translated.localeCompare(b.translated)
     })
   }
 
-  totalPages = filtered.length / paginationSize + 1
-  totalPages = Math.floor(totalPages);
+  return filtered
+})
 
-  return filtered.slice((page.value - 1) * paginationSize, page.value * paginationSize)
+const filteredList = computed(() => {
+  const start = (page.value - 1) * debouncedPagination.value;
+  const end = start + debouncedPagination.value;
+  return filteredListRaw.value.slice(start, end)
 })
 
 function nextString() {
-  let nextString = document.querySelector('.revising');
-  if (!nextString) nextString = document.querySelector('.pending');
+  let nextString = 
+    document.querySelector('.revising') ?? 
+    document.querySelector('.pending');
 
   if (nextString) nextString.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' })
 }
@@ -508,7 +547,7 @@ footer {
     border-top: solid 3px black;
 
     button {
-      opacity: 0;
+      z-index: -1;
       background-color: $other;
       color: white;
       border: none;
@@ -516,7 +555,7 @@ footer {
       cursor: pointer;
 
       &.show-btn {
-        opacity: 1;
+        z-index: 1;
       }
     }
   }
