@@ -101,8 +101,9 @@ useHead({
   title: "PROJETO - JADE EMPIRE BR"
 })
 
-let debounceTimer: ReturnType<typeof setTimeout>
-let saveQueue: Promise<void> = Promise.resolve()
+let eventSource: EventSource;
+let debounceTimer: ReturnType<typeof setTimeout>;
+let saveQueue: Promise<void> = Promise.resolve();
 
 const pendingPercentage = ref<number>(0);
 const revisingPercentage = ref<number>(0);
@@ -138,6 +139,12 @@ onMounted(async () => {
 
   await getPercentageCount();
   await getXML();
+
+  startRealtime();
+})
+
+onUnmounted(() => {
+  eventSource?.close()
 })
 
 watch(searchTerm, (value) => {
@@ -182,6 +189,26 @@ async function getXML() {
   });
 
   isLoading.value = false;
+}
+
+function startRealtime() {
+  eventSource = new EventSource('/api/watchStrings')
+
+  eventSource.onmessage = (event) => {
+    const data = JSON.parse(event.data)
+
+    if (data.type === 'update') {
+      const string = xmlList.value.find(s => s._id === data.id)
+
+      if (!string) return
+
+      Object.assign(string, data.updatedFields)
+
+      string.newTranslation = string.translated;
+      string.searchTranslated = string.translated.toLowerCase();
+      string.searchOriginal = string.original.toLowerCase();
+    }
+  }
 }
 
 function changeStatus(string: IString, status: TStatus) {
