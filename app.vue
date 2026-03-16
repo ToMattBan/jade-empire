@@ -102,6 +102,7 @@ useHead({
 })
 
 let debounceTimer: ReturnType<typeof setTimeout>
+let saveQueue: Promise<void> = Promise.resolve()
 
 const pendingPercentage = ref<number>(0);
 const revisingPercentage = ref<number>(0);
@@ -200,23 +201,25 @@ function changeStatus(string: IString, status: TStatus) {
   saveString(string, fakeString);
 }
 
-async function saveString(string: IString, fakeString: IString) {
-  try {
-    await $fetch('/api/saveString', {
-      method: "POST",
-      body: string
-    })
-  } catch (e) {
-    console.error('Não deu pra salvar essa string!!');
+function saveString(string: IString, fakeString: IString) {
+  saveQueue = saveQueue.then(async () => {
+    try {
+      await $fetch('/api/saveString', {
+        method: "POST",
+        body: string
+      })
+    } catch (e) {
+      console.error('Não deu pra salvar essa string!!');
 
-    const realString = xmlList.value.find(string => string._id === fakeString._id);
-    if (!realString) return;
+      const realString = xmlList.value.find(s => s._id === fakeString._id);
+      if (!realString) return;
 
-    realString._id = fakeString._id;
-    realString.changedNow = false;
-    realString.status = fakeString.status;
-    realString.translated = fakeString.translated;
-  }
+      realString._id = fakeString._id;
+      realString.changedNow = false;
+      realString.status = fakeString.status;
+      realString.translated = fakeString.translated;
+    }
+  })
 }
 
 async function downloadXML() {
