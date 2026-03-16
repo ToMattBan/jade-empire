@@ -47,7 +47,8 @@
   </div>
 
   <div class="content">
-    <div v-for="string of filteredList" class="list-container list-container--list" :class="string.changedNow ? 'changedNow' : string.status">
+    <div v-for="string of filteredList" class="list-container list-container--list"
+      :class="string.changedNow ? 'changedNow' : string.status">
       <div class="list-container--row">
         <div :data-replicated-value="string.original">
           <textarea disabled>{{ string.original }}</textarea>
@@ -60,7 +61,8 @@
 
       <div class="checkTranslated" v-if="string.status === 'revising' && !string.changedNow">
         <label :for="`checkTranslated-${string._id}`">Marcar como traduzido</label>
-        <input :name="`checkTranslated-${string._id}`" :id="`checkTranslated-${string._id}`" type="checkbox" :checked="false" @change="changeStatus(string, 'translated')" />
+        <input :name="`checkTranslated-${string._id}`" :id="`checkTranslated-${string._id}`" type="checkbox"
+          :checked="false" @change="changeStatus(string, 'translated')" />
       </div>
     </div>
   </div>
@@ -69,7 +71,8 @@
     <div class="pagination">
       <button class="next-page" @click="page = page - 1" :class="{ 'show-btn': page > 1 }">PÁGINA ANTERIOR</button>
       <span>Página {{ page }} de {{ totalPages }}</span>
-      <button class="prev-page" @click="page = page + 1" :class="{ 'show-btn': page < totalPages }">PRÓXIMA PÁGINA</button>
+      <button class="prev-page" @click="page = page + 1" :class="{ 'show-btn': page < totalPages }">PRÓXIMA
+        PÁGINA</button>
     </div>
 
     <div class="bottom-footer">
@@ -101,6 +104,7 @@ useHead({
   title: "PROJETO - JADE EMPIRE BR"
 })
 
+let eventSource: EventSource;
 let debounceTimer: ReturnType<typeof setTimeout>;
 let saveQueue: Promise<void> = Promise.resolve();
 
@@ -138,6 +142,11 @@ onMounted(async () => {
 
   await getPercentageCount();
   await getXML();
+
+  startRealtime();
+})
+onUnmounted(() => {
+  eventSource?.close()
 })
 
 watch(searchTerm, (value) => {
@@ -175,6 +184,28 @@ async function getXML() {
   xmlList.value = allStrings;
 
   isLoading.value = false;
+}
+
+function startRealtime() {
+  eventSource = new EventSource('/api/watchChanges');
+
+  eventSource.onmessage = (event) => {
+    const update = JSON.parse(event.data)
+    console.log("🚀 ~ startRealtime ~ update:", update)
+
+    const string = xmlList.value.find(s => s._id === update._id)
+    if (!string) return
+
+    if (update.translated !== undefined) {
+      string.translated = update.translated
+      string.newTranslation = update.translated
+      string.searchTranslated = update.translated.toLowerCase()
+    }
+
+    if (update.status !== undefined) {
+      string.status = update.status
+    }
+  }
 }
 
 function changeStatus(string: IString, status: TStatus) {
@@ -286,8 +317,8 @@ const filteredList = computed(() => {
 })
 
 function nextString() {
-  let nextString = 
-    document.querySelector('.revising') ?? 
+  let nextString =
+    document.querySelector('.revising') ??
     document.querySelector('.pending');
 
   if (nextString) nextString.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' })

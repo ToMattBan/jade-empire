@@ -1,28 +1,22 @@
 import { IString } from "~/interfaces/interfaces";
-import { closeClient, openDb } from "~/utils/db";
+import { openDb } from "~/utils/db";
 
-export default defineEventHandler(async (event) => {
-  let allStrings: IString[] = [];
+export default defineEventHandler(async () => {
+  const database = await openDb("everything");
+  const collection = database.collection<IString>("strings");
 
-  try {
-    const database = await openDb('everything');
-    const collection = database.collection<IString>('strings');
+  const allStrings: IString[] = [];
 
-    const searchResult = await collection.find({})
+  const cursor = collection.find({});
 
-    for await (const doc of searchResult) {
-      allStrings.push({
-        ...doc,
-        newTranslation: doc.translated,
-        searchOriginal: doc.original.toLowerCase(),
-        searchTranslated: doc.translated.toLowerCase()
-      } as IString);
-    }
-  } catch (e) {
-    console.error(e);
-  } finally {
-    await closeClient();
+  for await (const doc of cursor) {
+    allStrings.push({
+      ...doc,
+      newTranslation: doc.translated,
+      searchOriginal: doc.original.toLowerCase(),
+      searchTranslated: doc.translated.toLowerCase()
+    });
   }
 
   return allStrings;
-})
+});

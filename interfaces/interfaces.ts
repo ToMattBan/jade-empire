@@ -18,3 +18,9 @@ export interface IString {
   searchOriginal?: string,
   searchTranslated?: string,
 }
+
+export interface IUpdateString {
+  _id: string,
+  status?: TStatus,
+  translated?: string,
+}
