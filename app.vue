@@ -101,7 +101,6 @@ useHead({
   title: "PROJETO - JADE EMPIRE BR"
 })
 
-let eventSource: EventSource;
 let debounceTimer: ReturnType<typeof setTimeout>;
 let saveQueue: Promise<void> = Promise.resolve();
 
@@ -139,12 +138,6 @@ onMounted(async () => {
 
   await getPercentageCount();
   await getXML();
-
-  startRealtime();
-})
-
-onUnmounted(() => {
-  eventSource?.close()
 })
 
 watch(searchTerm, (value) => {
@@ -179,36 +172,9 @@ async function getXML() {
   const allStrings = await $fetch(`/api/getStrings`, { method: "GET" });
   if (!allStrings) return;
 
-  xmlList.value = allStrings.map(string => {
-    return {
-      ...string,
-      newTranslation: string.translated,
-      searchOriginal: string.original.toLowerCase(),
-      searchTranslated: string.translated.toLowerCase()
-    }
-  });
+  xmlList.value = allStrings;
 
   isLoading.value = false;
-}
-
-function startRealtime() {
-  eventSource = new EventSource('/api/watchStrings')
-
-  eventSource.onmessage = (event) => {
-    const data = JSON.parse(event.data)
-
-    if (data.type === 'update') {
-      const string = xmlList.value.find(s => s._id === data.id)
-
-      if (!string) return
-
-      Object.assign(string, data.updatedFields)
-
-      string.newTranslation = string.translated;
-      string.searchTranslated = string.translated.toLowerCase();
-      string.searchOriginal = string.original.toLowerCase();
-    }
-  }
 }
 
 function changeStatus(string: IString, status: TStatus) {

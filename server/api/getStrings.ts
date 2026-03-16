@@ -11,7 +11,12 @@ export default defineEventHandler(async (event) => {
     const searchResult = await collection.find({})
 
     for await (const doc of searchResult) {
-      allStrings.push(doc as IString);
+      allStrings.push({
+        ...doc,
+        newTranslation: doc.translated,
+        searchOriginal: doc.original.toLowerCase(),
+        searchTranslated: doc.translated.toLowerCase()
+      } as IString);
     }
   } catch (e) {
     console.error(e);
